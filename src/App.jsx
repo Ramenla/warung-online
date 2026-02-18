@@ -35,8 +35,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Storefront />} />
         <Route path="/login" element={<Login />} />
-        
-        {/* Protected Admin Route */}
         <Route element={<ProtectedRoute />}>
           <Route path="/admin" element={<Admin />} />
         </Route>
