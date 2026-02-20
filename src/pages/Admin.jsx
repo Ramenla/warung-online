@@ -75,6 +75,12 @@ export default function Admin() {
   const [expenseForm, setExpenseForm] = useState({ keterangan: '', nominal: '' });
   const [selectedProductIds, setSelectedProductIds] = useState([]);
 
+  // ========== POS STATE ==========
+  const [posCart, setPosCart] = useState([]);
+  const [posSearch, setPosSearch] = useState('');
+  const [uangTunai, setUangTunai] = useState('');
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
   // ========== FETCH ==========
   useEffect(() => { fetchAll(); }, []);
   const fetchAll = async () => { setLoading(true); await Promise.all([fetchProducts(), fetchCategories(), fetchUnits(), fetchOrders(), fetchArusKas()]); setLoading(false); };
@@ -175,6 +181,95 @@ export default function Admin() {
     setShowExpenseModal(false); setExpenseForm({ keterangan: '', nominal: '' }); fetchArusKas();
   };
 
+  // ========== POS HANDLERS ==========
+  const posFilteredProducts = products.filter(p => p.nama.toLowerCase().includes(posSearch.toLowerCase()));
+  const posTotal = posCart.reduce((s, item) => s + (item.harga * item.qty), 0);
+  const kembalian = parseInt(uangTunai || 0) - posTotal;
+
+  const handlePosAddToCart = (product) => {
+    if ((product.stok || 0) <= 0) return;
+    setPosCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        if (existing.qty >= product.stok) return prev; // Cannot add more than stock
+        return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
+      }
+      return [...prev, { ...product, qty: 1 }];
+    });
+  };
+
+  const updatePosQty = (id, delta) => {
+    setPosCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const product = products.find(p => p.id === id);
+        const newQty = item.qty + delta;
+        if (newQty <= 0) return null; // Marked for removal
+        if (newQty > (product?.stok || 0)) return item; // Cannot exceed stock
+        return { ...item, qty: newQty };
+      }
+      return item;
+    }).filter(Boolean));
+  };
+
+  const handlePosCheckout = async () => {
+    if (posCart.length === 0) { showAlert('Keranjang kosong!'); return; }
+    if (posTotal > 0 && parseInt(uangTunai || 0) < posTotal) { showAlert('Uang tunai kurang dari total belanja!'); return; }
+
+    setIsCheckoutLoading(true);
+    try {
+      // 1. Insert Transaksi
+      const { data: trxData, error: trxError } = await supabase.from('transaksi').insert([{
+        nama_pembeli: 'Pelanggan Offline',
+        status: 'Selesai',
+        metode_pembayaran: 'Tunai',
+        total_harga: posTotal,
+        metode_pengiriman: 'Ambil Sendiri',
+        catatan: 'Transaksi Kasir POS'
+      }]).select();
+      if (trxError) throw trxError;
+      const newTrxId = trxData[0].id;
+
+      // 2. Insert Detail Transaksi
+      const detailsPayload = posCart.map(item => ({
+        transaksi_id: newTrxId,
+        produk_id: item.id,
+        nama_produk: item.nama,
+        jumlah: item.qty,
+        harga_satuan: item.harga
+      }));
+      const { error: detailsError } = await supabase.from('detail_transaksi').insert(detailsPayload);
+      if (detailsError) throw detailsError;
+
+      // 3. Insert Arus Kas
+      const { error: kasError } = await supabase.from('arus_kas').insert([{
+        tipe: 'Pemasukan',
+        keterangan: `Penjualan Offline #${String(newTrxId).substring(0, 8).toUpperCase()}`,
+        nominal: posTotal
+      }]);
+      if (kasError) throw kasError;
+
+      // 4. Update Stok
+      for (const item of posCart) {
+        const product = products.find(p => p.id === item.id);
+        if (product) {
+          await supabase.from('produk').update({ stok: Math.max(0, (product.stok || 0) - item.qty) }).eq('id', product.id);
+        }
+      }
+
+      showAlert('Transaksi Offline Berhasil Disimpan!');
+      setPosCart([]);
+      setUangTunai('');
+      setPosSearch('');
+      fetchAll();
+
+    } catch (error) {
+      console.error(error);
+      showAlert('Terjadi kesalahan saat memproses checkout: ' + error.message);
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
+
   // ========== COMPUTED ==========
   const totalPemasukan = arusKas.filter(a => a.tipe === 'Pemasukan').reduce((s, a) => s + a.nominal, 0);
   const totalPengeluaran = arusKas.filter(a => a.tipe === 'Pengeluaran').reduce((s, a) => s + a.nominal, 0);
@@ -186,6 +281,7 @@ export default function Admin() {
 
   const navItems = [
     { id: 'dashboard', label: 'Dasbor Utama', short: 'D' },
+    { id: 'kasir', label: 'Mesin Kasir', short: 'M' },
     { id: 'produk', label: 'Daftar Produk', short: 'P' },
     { id: 'pesanan', label: 'Pesanan Masuk', short: 'O' },
     { id: 'bukukas', label: 'Buku Kas', short: 'K' }
@@ -324,6 +420,112 @@ export default function Admin() {
                 )}
               </div>
             </>
+          )}
+
+          {/* =============== KASIR (POS) =============== */}
+          {!loading && activeView === 'kasir' && (
+            <div className="flex flex-col lg:flex-row gap-6 items-start">
+              
+              {/* KIRI: Etalase */}
+              <div className="w-full lg:w-2/3 flex flex-col gap-4">
+                <input 
+                  type="text" 
+                  placeholder="Scan atau cari nama barang..." 
+                  value={posSearch} 
+                  onChange={(e) => setPosSearch(e.target.value)} 
+                  className="w-full p-4 text-xl border-4 border-black font-black focus:outline-none shadow-[4px_4px_0_0_black] bg-white" 
+                  autoFocus
+                />
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto max-h-[600px] p-2 pt-3 pr-4 pb-6">
+                  {posFilteredProducts.map(p => {
+                    const isOutOfStock = (p.stok || 0) <= 0;
+                    return (
+                      <div 
+                        key={p.id} 
+                        onClick={() => handlePosAddToCart(p)}
+                        className={`border-4 border-black p-3 flex flex-col justify-between cursor-pointer transition-transform active:translate-y-1 ${isOutOfStock ? 'bg-gray-200 grayscale opacity-70 cursor-not-allowed shadow-none' : 'bg-white shadow-[4px_4px_0_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_black]'}`}
+                      >
+                        <div>
+                          <div className="w-full h-24 bg-gray-100 border-2 border-black mb-2 overflow-hidden flex items-center justify-center">
+                            {p.image_url ? (
+                              <img src={p.image_url} alt={p.nama} className="w-full h-full object-cover" />
+                            ) : <span className="text-gray-400 font-bold text-xs">No Image</span>}
+                          </div>
+                          <h4 className="font-bold text-sm leading-tight line-clamp-2">{p.nama}</h4>
+                        </div>
+                        <div className="mt-2">
+                          <p className="font-black text-neo-teal">{formatRupiah(p.harga)}</p>
+                          <p className={`text-xs font-bold mt-1 ${isOutOfStock ? 'text-red-600' : 'text-gray-600'}`}>Stok: {p.stok || 0}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* KANAN: Struk/Cart */}
+              <div className="w-full lg:w-1/3 bg-white border-4 border-black shadow-[6px_6px_0_0_black] p-4 sticky top-24">
+                <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase">Keranjang Kasir</h3>
+                
+                <div className="flex flex-col gap-3 min-h-[250px] max-h-[400px] overflow-y-auto mb-4 border-b-4 border-dashed border-gray-300 pb-4">
+                  {posCart.length === 0 ? (
+                    <div className="m-auto text-gray-400 font-bold text-center">Keranjang masih kosong</div>
+                  ) : (
+                    posCart.map(item => (
+                      <div key={item.id} className="flex justify-between items-start gap-2 text-sm bg-gray-50 border-2 border-dashed border-gray-400 p-2">
+                        <div className="flex-1">
+                          <p className="font-bold leading-tight">{item.nama}</p>
+                          <p className="text-xs text-gray-600 mt-1">{formatRupiah(item.harga)} x {item.qty}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <p className="font-black">{formatRupiah(item.harga * item.qty)}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <button onClick={() => updatePosQty(item.id, -1)} className="w-6 h-6 flex items-center justify-center bg-red-200 border border-black font-bold active:translate-y-0.5">-</button>
+                            <span className="font-bold">{item.qty}</span>
+                            <button onClick={() => updatePosQty(item.id, 1)} className="w-6 h-6 flex items-center justify-center bg-green-200 border border-black font-bold active:translate-y-0.5">+</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-xl">
+                    <span className="font-bold uppercase">Total Belanja</span>
+                    <span className="font-black text-2xl">{formatRupiah(posTotal)}</span>
+                  </div>
+                  
+                  <div>
+                    <label className="block font-bold text-sm mb-1">Diterima (Cash)</label>
+                    <input 
+                      type="number" 
+                      value={uangTunai} 
+                      onChange={(e) => setUangTunai(e.target.value)}
+                      className="w-full p-2 border-4 border-black font-black text-lg focus:outline-none"
+                      placeholder="0"
+                    />
+                  </div>
+                  
+                  {uangTunai !== '' && (
+                    <div className={`flex justify-between items-center p-2 border-4 border-black ${kembalian < 0 ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-900'}`}>
+                      <span className="font-bold uppercase text-sm">Kembalian</span>
+                      <span className="font-black text-lg">{kembalian < 0 ? 'Kurang bayar!' : formatRupiah(kembalian)}</span>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={handlePosCheckout}
+                    disabled={isCheckoutLoading || posCart.length === 0 || (uangTunai !== '' && kembalian < 0)}
+                    className="w-full mt-4 bg-neo-teal text-black py-4 font-black text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
+                  >
+                    {isCheckoutLoading ? 'Memproses...' : 'SELESAIKAN PEMBAYARAN'}
+                  </button>
+                </div>
+              </div>
+
+            </div>
           )}
 
           {/* =============== PRODUK =============== */}
