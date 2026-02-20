@@ -473,8 +473,8 @@ export default function Admin() {
     { id: 'kasir', label: 'Mesin Kasir', short: 'M' },
     { id: 'produk', label: 'Daftar Produk', short: 'P' },
     { id: 'pesanan', label: 'Pesanan Masuk', short: 'O' },
-    { id: 'bukukas', label: 'Buku Kas', short: 'K' },
-    { id: 'kasbon', label: 'Buku Kasbon', short: 'B' }
+    { id: 'bukukas', label: 'Kas Keuangan', short: 'K' },
+    { id: 'kasbon', label: 'Paylater', short: 'B' }
   ];
 
   const handleNavClick = (id) => { setActiveView(id); setIsSidebarOpen(false); };
@@ -743,7 +743,7 @@ export default function Admin() {
                       disabled={isCheckoutLoading || posCart.length === 0}
                       className="flex-1 bg-yellow-400 text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
                     >
-                      KASBON
+                      PAYLATER
                     </button>
                   </div>
                 </div>
@@ -919,11 +919,11 @@ export default function Admin() {
           {!loading && activeView === 'kasbon' && (
             <>
               <div className="flex justify-between flex-wrap gap-2 mb-4 items-center">
-                <h2 className="font-black text-2xl uppercase hidden md:block">Buku Kasbon</h2>
+                <h2 className="font-black text-2xl uppercase hidden md:block">Paylater</h2>
               </div>
 
               <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
-                {kasbon.length === 0 ? <p className="text-center text-gray-500 font-bold py-8">Belum ada catatan kasbon.</p> : (
+                {kasbon.length === 0 ? <p className="text-center text-gray-500 font-bold py-8">Belum ada catatan Paylater</p> : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
                       <thead>
@@ -1019,13 +1019,13 @@ export default function Admin() {
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 backdrop-blur-sm">
           <div className="bg-white w-[95%] max-w-md border-4 border-black shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-6 relative rounded-lg">
             <button onClick={() => setShowPosKasbonPrompt(false)} className="absolute top-4 right-4 text-2xl font-black text-red-500 hover:scale-110">&times;</button>
-            <h2 className="text-xl font-black mb-4 border-b-4 border-black pb-2 uppercase text-yellow-500">Checkout Kasbon</h2>
-            <p className="font-bold mb-4 text-sm text-gray-600">Total belanja {formatRupiah(posTotal)} ini akan dikreditkan sebagai Kasbon baru. Mohon masukkan nama pihak yang berhutang.</p>
+            <h2 className="text-xl font-black mb-4 border-b-4 border-black pb-2 uppercase text-yellow-500">Checkout Paylater</h2>
+            <p className="font-bold mb-4 text-sm text-gray-600">Total belanja {formatRupiah(posTotal)} ini akan dikreditkan sebagai Paylater baru. Mohon masukkan nama pihak yang berhutang.</p>
             <form onSubmit={handlePosKasbon} className="space-y-4">
               <div><label className="block font-bold mb-1">Nama Pelanggan yang Berhutang</label><input type="text" value={posKasbonName} onChange={(e) => setPosKasbonName(e.target.value)} className="w-full p-3 border-4 border-black font-black focus:outline-none text-lg bg-yellow-50" placeholder="Cth: Ibu RT" required autoFocus /></div>
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setShowPosKasbonPrompt(false)} className="flex-1 bg-gray-200 py-3 font-bold border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">Batal</button>
-                <button type="submit" disabled={isCheckoutLoading} className="flex-1 bg-yellow-400 text-black py-3 font-black border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">{isCheckoutLoading ? 'Memproses...' : 'BUAT KASBON'}</button>
+                <button type="submit" disabled={isCheckoutLoading} className="flex-1 bg-yellow-400 text-black py-3 font-black border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">{isCheckoutLoading ? 'Memproses...' : 'BUAT PAYLATER'}</button>
               </div>
             </form>
           </div>
