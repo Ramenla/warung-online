@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { handleSupabaseError } from '../utils/errorHandler';
 
 // ========== CUSTOM CONFIRM MODAL ==========
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
@@ -75,20 +76,35 @@ export default function Admin() {
   const [expenseForm, setExpenseForm] = useState({ keterangan: '', nominal: '' });
   const [selectedProductIds, setSelectedProductIds] = useState([]);
 
+  // ========== KASBON STATE ==========
+  const [kasbon, setKasbon] = useState([]);
+  const [showAddKasbonModal, setShowAddKasbonModal] = useState(false);
+  const [addKasbonData, setAddKasbonData] = useState({ id: null, nama: '', nominal: '', keterangan_tambahan: '' });
+
+  // ========== FILTER STATE ==========
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  const [filterMonth, setFilterMonth] = useState(currentMonth);
+  const [filterYear, setFilterYear] = useState(currentYear);
+
   // ========== POS STATE ==========
   const [posCart, setPosCart] = useState([]);
   const [posSearch, setPosSearch] = useState('');
+  const [posSelectedCategory, setPosSelectedCategory] = useState('Semua');
   const [uangTunai, setUangTunai] = useState('');
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [showPosKasbonPrompt, setShowPosKasbonPrompt] = useState(false);
+  const [posKasbonName, setPosKasbonName] = useState('');
 
   // ========== FETCH ==========
   useEffect(() => { fetchAll(); }, []);
-  const fetchAll = async () => { setLoading(true); await Promise.all([fetchProducts(), fetchCategories(), fetchUnits(), fetchOrders(), fetchArusKas()]); setLoading(false); };
-  const fetchProducts = async () => { const { data } = await supabase.from('produk').select('*').order('id', { ascending: false }); setProducts(data || []); };
-  const fetchCategories = async () => { const { data } = await supabase.from('kategori').select('*').order('nama'); setCategories(data || []); };
-  const fetchUnits = async () => { const { data } = await supabase.from('satuan').select('*').order('nama'); setUnits(data || []); };
-  const fetchOrders = async () => { const { data } = await supabase.from('transaksi').select('*').order('created_at', { ascending: false }); setOrders(data || []); };
-  const fetchArusKas = async () => { const { data } = await supabase.from('arus_kas').select('*').order('created_at', { ascending: false }); setArusKas(data || []); };
+  const fetchAll = async () => { setLoading(true); await Promise.all([fetchProducts(), fetchCategories(), fetchUnits(), fetchOrders(), fetchArusKas(), fetchKasbon()]); setLoading(false); };
+  const fetchProducts = async () => { const { data, error } = await supabase.from('produk').select('*').order('id', { ascending: false }); if (error) handleSupabaseError(error); setProducts(data || []); };
+  const fetchCategories = async () => { const { data, error } = await supabase.from('kategori').select('*').order('nama'); if (error) handleSupabaseError(error); setCategories(data || []); };
+  const fetchUnits = async () => { const { data, error } = await supabase.from('satuan').select('*').order('nama'); if (error) handleSupabaseError(error); setUnits(data || []); };
+  const fetchOrders = async () => { const { data, error } = await supabase.from('transaksi').select('*').order('created_at', { ascending: false }); if (error) handleSupabaseError(error); setOrders(data || []); };
+  const fetchArusKas = async () => { const { data, error } = await supabase.from('arus_kas').select('*').order('created_at', { ascending: false }); if (error) handleSupabaseError(error); setArusKas(data || []); };
+  const fetchKasbon = async () => { const { data, error } = await supabase.from('kasbon').select('*').order('created_at', { ascending: false }); if (error) handleSupabaseError(error); setKasbon(data || []); };
 
   // ========== PRODUCT HANDLERS ==========
   const handleInputChange = (e) => { const { name, value, files } = e.target; if (name === 'file') setFormData({ ...formData, file: files[0] }); else setFormData({ ...formData, [name]: value }); };
@@ -181,8 +197,103 @@ export default function Admin() {
     setShowExpenseModal(false); setExpenseForm({ keterangan: '', nominal: '' }); fetchArusKas();
   };
 
+  // ========== KASBON HANDLERS ==========
+  const handleLunasKasbon = async (item) => {
+    const ok = await showConfirm('Terima Pembayaran', `Terima pembayaran ${formatRupiah(item.nominal)} dari ${item.nama_pelanggan}?`);
+    if (!ok) return;
+
+    // 1. Update Kasbon
+    await supabase.from('kasbon').update({ status: 'Lunas', tanggal_lunas: new Date().toISOString() }).eq('id', item.id);
+    
+    // 2. Insert Pemasukan Arus Kas
+    await supabase.from('arus_kas').insert([{ 
+      tipe: 'Pemasukan', 
+      keterangan: `Pelunasan Kasbon - ${item.nama_pelanggan}`, 
+      nominal: item.nominal 
+    }]);
+
+    // 3. Update Transaksi record (opsional, jika terkait transaksi online/offline)
+    if (item.transaksi_id) {
+      await supabase.from('transaksi').update({
+        metode_pembayaran: 'Tunai (Kasbon Lunas)'
+      }).eq('id', item.transaksi_id);
+    }
+    
+    fetchKasbon();
+    fetchArusKas();
+    fetchOrders();
+    showAlert('Kasbon berhasil ditandai Lunas dan masuk ke Arus Kas!');
+  };
+
+  const handleDeleteKasbon = async (id) => {
+    const ok = await showConfirm('Hapus Kasbon', 'Yakin ingin menghapus catatan kasbon ini? Data akan hilang permanen.');
+    if (ok) {
+      const { error } = await supabase.from('kasbon').delete().eq('id', id);
+      if (error) {
+        handleSupabaseError(error);
+        showAlert('Gagal menghapus kasbon: ' + error.message);
+      } else {
+        fetchKasbon();
+        showAlert('Catatan Kasbon berhasil dihapus.');
+      }
+    }
+  };
+
+  const submitAddKasbonAmount = async (e) => {
+    e.preventDefault();
+    if (!addKasbonData.nominal || addKasbonData.nominal <= 0) return;
+    
+    setIsCheckoutLoading(true);
+    try {
+      const kas = kasbon.find(k => k.id === addKasbonData.id);
+      if (!kas) throw new Error("Kasbon tidak ditemukan");
+      
+      const newTotal = parseInt(kas.nominal) + parseInt(addKasbonData.nominal);
+      const newKet = kas.keterangan + '\n' + `+ ${formatRupiah(parseInt(addKasbonData.nominal))} (${addKasbonData.keterangan_tambahan || 'Tanpa keterangan'})`;
+      
+      const { error } = await supabase.from('kasbon').update({
+        nominal: newTotal,
+        keterangan: newKet
+      }).eq('id', addKasbonData.id);
+      
+      if (error) throw error;
+      
+      showAlert(`Berhasil menambahkan kasbon untuk ${addKasbonData.nama}. Total: ${formatRupiah(newTotal)}`);
+      setShowAddKasbonModal(false);
+      fetchKasbon();
+    } catch (error) {
+       console.error(error);
+       handleSupabaseError(error);
+       showAlert('Terjadi kesalahan: ' + error.message);
+    } finally {
+       setIsCheckoutLoading(false);
+    }
+  };
+
+  // ========== EXPORT EXCEL/CSV ==========
+  const exportToCSV = (data, filename) => {
+    if (data.length === 0) { showAlert('Tidak ada data untuk diekspor!'); return; }
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(obj => Object.values(obj).map(val => {
+      if (val === null || val === undefined) return '""';
+      return `"${String(val).replace(/"/g, '""')}"`;
+    }).join(',')).join('\n');
+    
+    const csvContent = headers + '\n' + rows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  };
+
   // ========== POS HANDLERS ==========
-  const posFilteredProducts = products.filter(p => p.nama.toLowerCase().includes(posSearch.toLowerCase()));
+  const posCategories = ['Semua', ...new Set(products.map(p => p.kategori))];
+  const posFilteredProducts = products.filter(p => {
+    const searchMatch = p.nama.toLowerCase().includes(posSearch.toLowerCase());
+    const categoryMatch = posSelectedCategory === 'Semua' || p.kategori === posSelectedCategory;
+    return searchMatch && categoryMatch;
+  });
   const posTotal = posCart.reduce((s, item) => s + (item.harga * item.qty), 0);
   const kembalian = parseInt(uangTunai || 0) - posTotal;
 
@@ -264,17 +375,95 @@ export default function Admin() {
 
     } catch (error) {
       console.error(error);
+      handleSupabaseError(error);
       showAlert('Terjadi kesalahan saat memproses checkout: ' + error.message);
     } finally {
       setIsCheckoutLoading(false);
     }
   };
 
-  // ========== COMPUTED ==========
-  const totalPemasukan = arusKas.filter(a => a.tipe === 'Pemasukan').reduce((s, a) => s + a.nominal, 0);
-  const totalPengeluaran = arusKas.filter(a => a.tipe === 'Pengeluaran').reduce((s, a) => s + a.nominal, 0);
+  const handlePosKasbon = async (e) => {
+    e.preventDefault();
+    if (!posKasbonName.trim()) return;
+    setIsCheckoutLoading(true);
+    
+    try {
+      const ringkasanBarang = posCart.map(item => `${item.nama} x${item.qty}`).join(', ');
+      
+      // 1. Insert Transaksi
+      const { data: trxData, error: trxError } = await supabase.from('transaksi').insert([{
+        nama_pembeli: posKasbonName,
+        status: 'Selesai',
+        metode_pembayaran: 'Kasbon',
+        total_harga: posTotal,
+        metode_pengiriman: 'Ambil Sendiri',
+        catatan: 'Transaksi Kasir POS (Kasbon)'
+      }]).select();
+      if (trxError) throw trxError;
+      const newTrxId = trxData[0].id;
+
+      // 2. Insert Detail Transaksi
+      const detailsPayload = posCart.map(item => ({
+        transaksi_id: newTrxId,
+        produk_id: item.id,
+        nama_produk: item.nama,
+        jumlah: item.qty,
+        harga_satuan: item.harga
+      }));
+      await supabase.from('detail_transaksi').insert(detailsPayload);
+
+      // 3. Update Stok
+      for (const item of posCart) {
+        const product = products.find(p => p.id === item.id);
+        if (product) {
+          await supabase.from('produk').update({ stok: Math.max(0, (product.stok || 0) - item.qty) }).eq('id', product.id);
+        }
+      }
+      
+      // 4. Insert Kasbon (Tanpa Arus Kas)
+      await supabase.from('kasbon').insert([{
+        nama_pelanggan: posKasbonName,
+        keterangan: `Belanja Offline: ${ringkasanBarang}`,
+        nominal: posTotal,
+        status: 'Belum Lunas',
+        transaksi_id: newTrxId
+      }]);
+
+      showAlert('Transaksi Kasbon Offline Berhasil Dicatat!');
+      setPosCart([]);
+      setUangTunai('');
+      setPosSearch('');
+      setShowPosKasbonPrompt(false);
+      setPosKasbonName('');
+      fetchAll();
+
+    } catch (error) {
+      console.error(error);
+      handleSupabaseError(error);
+      showAlert('Terjadi kesalahan kasbon: ' + error.message);
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
+
+  // ========== COMPUTED & FILTERING ==========
+  // Filter for dashboard
+  const filteredArusKas = arusKas.filter(a => {
+    const d = new Date(a.created_at);
+    return d.getMonth() + 1 === parseInt(filterMonth) && d.getFullYear() === parseInt(filterYear);
+  });
+  const filteredTransaksi = orders.filter(o => {
+    const d = new Date(o.created_at);
+    return d.getMonth() + 1 === parseInt(filterMonth) && d.getFullYear() === parseInt(filterYear);
+  });
+
+  const totalPemasukan = filteredArusKas.filter(a => a.tipe === 'Pemasukan').reduce((s, a) => s + a.nominal, 0);
+  const totalPengeluaran = filteredArusKas.filter(a => a.tipe === 'Pengeluaran').reduce((s, a) => s + a.nominal, 0);
   const saldoBersih = totalPemasukan - totalPengeluaran;
-  const completedOrders = orders.filter(o => o.status === 'Selesai').length;
+  
+  // Also count total completed orders in selected month
+  const completedOrders = filteredTransaksi.filter(o => o.status === 'Selesai').length;
+  
   const lowStockProducts = products.filter(p => (p.stok || 0) < 5).sort((a, b) => (a.stok || 0) - (b.stok || 0)).slice(0, 5);
   const filteredProducts = products.filter(p => p.nama.toLowerCase().includes(searchQuery.toLowerCase()) || (p.kategori && p.kategori.toLowerCase().includes(searchQuery.toLowerCase())));
   const maxFinancial = Math.max(totalPemasukan, totalPengeluaran, 1);
@@ -284,7 +473,8 @@ export default function Admin() {
     { id: 'kasir', label: 'Mesin Kasir', short: 'M' },
     { id: 'produk', label: 'Daftar Produk', short: 'P' },
     { id: 'pesanan', label: 'Pesanan Masuk', short: 'O' },
-    { id: 'bukukas', label: 'Buku Kas', short: 'K' }
+    { id: 'bukukas', label: 'Buku Kas', short: 'K' },
+    { id: 'kasbon', label: 'Buku Kasbon', short: 'B' }
   ];
 
   const handleNavClick = (id) => { setActiveView(id); setIsSidebarOpen(false); };
@@ -374,6 +564,16 @@ export default function Admin() {
           {/* =============== DASHBOARD =============== */}
           {!loading && activeView === 'dashboard' && (
             <>
+              {/* Filter Bulan/Tahun */}
+              <div className="flex flex-wrap gap-4 mb-4">
+                <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm">
+                  {Array.from({length: 12}, (_, i) => (<option key={i+1} value={i+1}>{new Date(2000, i).toLocaleString('id-ID', {month: 'long'})}</option>))}
+                </select>
+                <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm">
+                  {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard title="Total Pendapatan" value={formatRupiah(totalPemasukan)} color="bg-green-500" text="text-white" small />
                 <StatCard title="Total Pengeluaran" value={formatRupiah(totalPengeluaran)} color="bg-red-500" text="text-white" small />
@@ -437,6 +637,20 @@ export default function Admin() {
                   autoFocus
                 />
                 
+                {/* Kategori Filter */}
+                <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
+                  {posCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setPosSelectedCategory(cat)}
+                      className={`whitespace-nowrap px-3 py-1 font-bold border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-y-1 text-sm md:text-base
+                        ${posSelectedCategory === cat ? 'bg-neo-purple text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto max-h-[600px] p-2 pt-3 pr-4 pb-6">
                   {posFilteredProducts.map(p => {
                     const isOutOfStock = (p.stok || 0) <= 0;
@@ -500,9 +714,10 @@ export default function Admin() {
                   <div>
                     <label className="block font-bold text-sm mb-1">Diterima (Cash)</label>
                     <input 
-                      type="number" 
-                      value={uangTunai} 
-                      onChange={(e) => setUangTunai(e.target.value)}
+                      type="text" 
+                      inputMode="numeric"
+                      value={uangTunai ? new Intl.NumberFormat('id-ID').format(uangTunai) : ''} 
+                      onChange={(e) => setUangTunai(e.target.value.replace(/\D/g, ''))}
                       className="w-full p-2 border-4 border-black font-black text-lg focus:outline-none"
                       placeholder="0"
                     />
@@ -515,13 +730,22 @@ export default function Admin() {
                     </div>
                   )}
 
-                  <button 
-                    onClick={handlePosCheckout}
-                    disabled={isCheckoutLoading || posCart.length === 0 || (uangTunai !== '' && kembalian < 0)}
-                    className="w-full mt-4 bg-neo-teal text-black py-4 font-black text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
-                  >
-                    {isCheckoutLoading ? 'Memproses...' : 'SELESAIKAN PEMBAYARAN'}
-                  </button>
+                  <div className="flex gap-2 mt-4">
+                    <button 
+                      onClick={handlePosCheckout}
+                      disabled={isCheckoutLoading || posCart.length === 0 || (uangTunai !== '' && kembalian < 0)}
+                      className="flex-1 bg-neo-teal text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
+                    >
+                      {isCheckoutLoading ? 'Memproses...' : 'BAYAR TUNAI'}
+                    </button>
+                    <button 
+                      onClick={() => setShowPosKasbonPrompt(true)}
+                      disabled={isCheckoutLoading || posCart.length === 0}
+                      className="flex-1 bg-yellow-400 text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
+                    >
+                      KASBON
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -533,12 +757,6 @@ export default function Admin() {
             <>
               <div className="flex justify-between items-center flex-wrap gap-2">
                 <h2 className="font-black text-2xl uppercase hidden md:block">Manajemen Produk</h2>
-                <div className="flex gap-2">
-                  {selectedProductIds.length > 0 && (
-                    <button onClick={handleBulkDelete} className="bg-red-500 text-white font-bold py-2 px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-sm">Hapus {selectedProductIds.length} Terpilih</button>
-                  )}
-                  <button onClick={openAddModal} className="bg-neo-teal text-black font-black py-2 px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-sm">+ Tambah Produk</button>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -547,7 +765,15 @@ export default function Admin() {
               </div>
 
               <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
-                <input type="text" placeholder="Cari produk..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full md:w-1/3 p-2 font-bold border-4 border-black focus:outline-none bg-gray-100 mb-4" />
+                <div className="flex justify-between flex-wrap gap-2 items-center mb-4">
+                  <input type="text" placeholder="Cari produk..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full md:w-1/3 p-2 font-bold border-4 border-black focus:outline-none bg-gray-100" />
+                  <div className="flex gap-2">
+                    {selectedProductIds.length > 0 && (
+                      <button onClick={handleBulkDelete} className="bg-red-500 text-white font-bold py-2 px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-sm">Hapus {selectedProductIds.length} Terpilih</button>
+                    )}
+                    <button onClick={openAddModal} className="bg-neo-teal text-black font-black py-2 px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-sm">+ Tambah Produk</button>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
                     <thead>
@@ -598,7 +824,10 @@ export default function Admin() {
               </div>
 
               <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
-                <h3 className="font-black text-xl mb-4 uppercase">Pesanan Masuk</h3>
+                <div className="flex justify-between flex-wrap gap-2 items-center mb-4 border-b-4 border-black pb-2">
+                  <h3 className="font-black text-xl uppercase">Pesanan Masuk</h3>
+                  <button onClick={() => exportToCSV(orders, `Pesanan_${new Date().toLocaleDateString('id-ID')}.csv`)} className="bg-yellow-400 text-black px-3 py-1 font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-xs uppercase flex items-center gap-1">UNDUH Laporan (CSV)</button>
+                </div>
                 {orders.length === 0 ? <p className="text-center text-gray-500 font-bold py-8">Belum ada pesanan.</p> : (
                   <div className="space-y-3">
                     {orders.map(order => {
@@ -661,7 +890,10 @@ export default function Admin() {
               </div>
 
               <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
-                <h3 className="font-black text-xl mb-4 uppercase">Riwayat Arus Kas</h3>
+                <div className="flex justify-between flex-wrap gap-2 items-center mb-4 border-b-4 border-black pb-2">
+                  <h3 className="font-black text-xl uppercase">Riwayat Arus Kas</h3>
+                  <button onClick={() => exportToCSV(arusKas, `Arus_Kas_${new Date().toLocaleDateString('id-ID')}.csv`)} className="bg-yellow-400 text-black px-3 py-1 font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-xs uppercase flex items-center gap-1">UNDUH Laporan (CSV)</button>
+                </div>
                 {arusKas.length === 0 ? <p className="text-center text-gray-500 font-bold py-8">Belum ada catatan.</p> : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
@@ -675,6 +907,60 @@ export default function Admin() {
                             <td className={`p-3 text-right font-black ${a.tipe === 'Pemasukan' ? 'text-green-700' : 'text-red-600'}`}>{a.tipe === 'Pemasukan' ? '+' : '-'}{formatRupiah(a.nominal)}</td>
                           </tr>
                         ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* =============== BUKU KASBON =============== */}
+          {!loading && activeView === 'kasbon' && (
+            <>
+              <div className="flex justify-between flex-wrap gap-2 mb-4 items-center">
+                <h2 className="font-black text-2xl uppercase hidden md:block">Buku Kasbon</h2>
+              </div>
+
+              <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
+                {kasbon.length === 0 ? <p className="text-center text-gray-500 font-bold py-8">Belum ada catatan kasbon.</p> : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
+                      <thead>
+                        <tr className="bg-black text-white uppercase text-xs">
+                          <th className="p-3">Tanggal Kasbon</th><th className="p-3">Pelanggan</th><th className="p-3">Keterangan</th><th className="p-3 text-right">Nominal</th><th className="p-3 text-center">Status</th><th className="p-3 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="font-bold">
+                        {kasbon.map(k => {
+                          const dateObj = new Date(k.created_at);
+                          const dateFormatted = `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+                          return (
+                            <tr key={k.id} className="border-b-2 border-gray-200 hover:bg-yellow-50">
+                              <td className="p-3 text-xs">{dateFormatted}</td>
+                              <td className="p-3 text-indigo-900">{k.nama_pelanggan}</td>
+                              <td className="p-3 text-gray-600 truncate max-w-[250px]" title={k.keterangan}>{k.keterangan}</td>
+                              <td className="p-3 text-right text-red-600 font-black">{formatRupiah(k.nominal)}</td>
+                              <td className="p-3 text-center">
+                                <span className={`px-2 py-0.5 text-xs border border-black font-bold -skew-x-6 inline-block ${k.status === 'Lunas' ? 'bg-green-300 text-green-900' : 'bg-red-500 text-white'}`}>{k.status}</span>
+                              </td>
+                              <td className="p-3 text-center">
+                                {k.status === 'Belum Lunas' ? (
+                                  <div className="flex gap-1 justify-center flex-wrap">
+                                    <button onClick={() => { setAddKasbonData({ id: k.id, nama: k.nama_pelanggan, nominal: '', keterangan_tambahan: '' }); setShowAddKasbonModal(true); }} className="bg-yellow-400 text-black px-2 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-yellow-500" title="Tambah Hutang">+</button>
+                                    <button onClick={() => handleDeleteKasbon(k.id)} className="bg-red-500 text-white px-2 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600" title="Hapus">X</button>
+                                    <button onClick={() => handleLunasKasbon(k)} className="bg-neo-teal text-black px-3 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase hover:bg-teal-400">Lunas</button>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-1 justify-center flex-wrap">
+                                    <span className="text-green-700 bg-green-100 px-2 py-1 font-black text-xs border border-green-700 -skew-x-6 inline-block">Selesai</span>
+                                    <button onClick={() => handleDeleteKasbon(k.id)} className="bg-red-500 text-white px-2 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600" title="Hapus">X</button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -722,6 +1008,48 @@ export default function Admin() {
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setShowExpenseModal(false)} className="flex-1 bg-gray-200 py-3 font-bold border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none">Batal</button>
                 <button type="submit" className="flex-1 bg-red-500 text-white py-3 font-black border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none">SIMPAN</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
+      {showPosKasbonPrompt && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 backdrop-blur-sm">
+          <div className="bg-white w-[95%] max-w-md border-4 border-black shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-6 relative rounded-lg">
+            <button onClick={() => setShowPosKasbonPrompt(false)} className="absolute top-4 right-4 text-2xl font-black text-red-500 hover:scale-110">&times;</button>
+            <h2 className="text-xl font-black mb-4 border-b-4 border-black pb-2 uppercase text-yellow-500">Checkout Kasbon</h2>
+            <p className="font-bold mb-4 text-sm text-gray-600">Total belanja {formatRupiah(posTotal)} ini akan dikreditkan sebagai Kasbon baru. Mohon masukkan nama pihak yang berhutang.</p>
+            <form onSubmit={handlePosKasbon} className="space-y-4">
+              <div><label className="block font-bold mb-1">Nama Pelanggan yang Berhutang</label><input type="text" value={posKasbonName} onChange={(e) => setPosKasbonName(e.target.value)} className="w-full p-3 border-4 border-black font-black focus:outline-none text-lg bg-yellow-50" placeholder="Cth: Ibu RT" required autoFocus /></div>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowPosKasbonPrompt(false)} className="flex-1 bg-gray-200 py-3 font-bold border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">Batal</button>
+                <button type="submit" disabled={isCheckoutLoading} className="flex-1 bg-yellow-400 text-black py-3 font-black border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">{isCheckoutLoading ? 'Memproses...' : 'BUAT KASBON'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAddKasbonModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 backdrop-blur-sm">
+          <div className="bg-white w-[95%] max-w-md border-4 border-black shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-6 relative rounded-lg">
+            <button onClick={() => setShowAddKasbonModal(false)} className="absolute top-4 right-4 text-2xl font-black text-red-500 hover:scale-110">&times;</button>
+            <h2 className="text-xl font-black mb-4 border-b-4 border-black pb-2 uppercase text-yellow-500">Tambah Nominal Kasbon</h2>
+            <p className="font-bold mb-4 text-sm text-gray-600">Tambah tagihan untuk <span className="text-indigo-900 border-b-2 border-indigo-900">{addKasbonData.nama}</span>.</p>
+            <form onSubmit={submitAddKasbonAmount} className="space-y-4">
+              <div>
+                <label className="block font-bold mb-1">Nominal (Rp)</label>
+                <input type="number" value={addKasbonData.nominal} onChange={(e) => setAddKasbonData({...addKasbonData, nominal: e.target.value})} className="w-full p-3 border-4 border-black font-black focus:outline-none text-lg bg-yellow-50" placeholder="Cth: 20000" required autoFocus />
+              </div>
+              <div>
+                <label className="block font-bold mb-1">Keterangan (Opsional)</label>
+                <input type="text" value={addKasbonData.keterangan_tambahan} onChange={(e) => setAddKasbonData({...addKasbonData, keterangan_tambahan: e.target.value})} className="w-full p-3 border-4 border-black font-bold focus:outline-none text-sm" placeholder="Contoh: Rokok Surya 1 bungkus" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setShowAddKasbonModal(false)} className="flex-1 bg-gray-200 py-3 font-bold border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">Batal</button>
+                <button type="submit" disabled={isCheckoutLoading} className="flex-1 bg-yellow-400 text-black py-3 font-black border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">{isCheckoutLoading ? 'Memproses...' : 'SIMPAN'}</button>
               </div>
             </form>
           </div>

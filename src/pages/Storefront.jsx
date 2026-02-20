@@ -3,6 +3,7 @@ import ProductCard from '../components/ProductCard';
 import CartSidebar from '../components/CartSidebar';
 import { supabase } from '../supabaseClient';
 import { CartContext } from '../context/CartContext';
+import { handleSupabaseError } from '../utils/errorHandler';
 
 export default function Storefront() {
   const [products, setProducts] = useState([]);
@@ -23,6 +24,7 @@ export default function Storefront() {
         setProducts(data);
       } catch (error) {
         console.error('Error fetching products:', error.message);
+        handleSupabaseError(error);
       } finally {
         setIsLoading(false);
       }

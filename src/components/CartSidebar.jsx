@@ -55,6 +55,23 @@ const CartSidebar = ({ isOpen, onClose }) => {
       return;
     }
 
+    const ringkasanBarang = cart.map(item => `${item.name} x${item.quantity}`).join(', ');
+
+    if (paymentMethod === 'Kasbon') {
+      const { error: kasbonError } = await supabase.from('kasbon').insert([{
+        nama_pelanggan: namaPembeli,
+        keterangan: `Pesanan Online: ${ringkasanBarang}`,
+        nominal: totalPrice,
+        status: 'Belum Lunas',
+        transaksi_id: transaksiId
+      }]);
+      if (kasbonError) {
+        alert('Gagal menyimpan data kasbon: ' + kasbonError.message);
+        setProcessing(false);
+        return;
+      }
+    }
+
     const phoneNumber = '6287874668656';
     const shortId = String(transaksiId).substring(0, 8).toUpperCase();
     
@@ -142,12 +159,12 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
                   <div>
                     <label className="block font-black text-sm mb-2 uppercase">Pembayaran</label>
-                    <div className="flex gap-2">
-                      {['COD', 'QRIS'].map(opt => (
+                    <div className="flex gap-2 text-xs md:text-sm">
+                      {['COD', 'QRIS', 'Kasbon'].map(opt => (
                         <button key={opt} type="button" onClick={() => setPaymentMethod(opt)}
-                          className={`flex-1 py-2 font-bold text-sm border-2 border-black transition-all
+                          className={`flex-1 py-2 font-bold border-2 border-black transition-all
                           ${paymentMethod === opt ? 'bg-black text-white shadow-none' : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none'}`}
-                        >{opt === 'COD' ? 'Tunai (COD)' : 'QRIS'}</button>
+                        >{opt === 'COD' ? 'Tunai (COD)' : opt === 'Kasbon' ? 'Kasbon (Nanti)' : 'QRIS'}</button>
                       ))}
                     </div>
                     {paymentMethod === 'QRIS' && (
