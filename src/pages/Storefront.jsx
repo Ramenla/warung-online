@@ -185,8 +185,8 @@ export default function Storefront() {
 
                 {/* All Products Section (when NOT searching) */}
                 {!isSearching && (
-                  <section className={sections.length > 0 ? "pt-8" : ""}>
-                    <h2 className="text-xl md:text-2xl font-black mb-4 inline-block bg-black text-white px-3 py-1 transform -rotate-1 border-2 border-neo-orange uppercase mt-4">
+                  <section className={sections.length > 0 ? "pt-1" : ""}>
+                    <h2 className="text-xl md:text-2xl font-black mb-4 inline-block bg-black text-white px-3 py-1 transform -rotate-1 border-2 border-neo-orange uppercase 2 mt-2">
                       {sections.length > 0 ? "SEMUA PRODUK" : "KATALOG"}
                     </h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 w-full">
