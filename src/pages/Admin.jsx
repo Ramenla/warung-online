@@ -628,27 +628,29 @@ export default function Admin() {
               
               {/* KIRI: Etalase */}
               <div className="w-full lg:w-2/3 flex flex-col gap-4">
-                <input 
-                  type="text" 
-                  placeholder="Scan atau cari nama barang..." 
-                  value={posSearch} 
-                  onChange={(e) => setPosSearch(e.target.value)} 
-                  className="w-full p-4 text-xl border-4 border-black font-black focus:outline-none shadow-[4px_4px_0_0_black] bg-white" 
-                  autoFocus
-                />
-                
-                {/* Kategori Filter */}
-                <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
-                  {posCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setPosSelectedCategory(cat)}
-                      className={`whitespace-nowrap px-3 py-1 font-bold border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-y-1 text-sm md:text-base
-                        ${posSelectedCategory === cat ? 'bg-neo-purple text-white' : 'bg-white text-black hover:bg-gray-100'}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                <div className="sticky top-16 z-20 bg-neo-bg pt-2 pb-2">
+                  <input 
+                    type="text" 
+                    placeholder="Scan atau cari nama barang..." 
+                    value={posSearch} 
+                    onChange={(e) => setPosSearch(e.target.value)} 
+                    className="w-full p-4 text-xl border-4 border-black font-black focus:outline-none shadow-[4px_4px_0_0_black] bg-white mb-2" 
+                    autoFocus
+                  />
+                  
+                  {/* Kategori Filter */}
+                  <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
+                    {posCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setPosSelectedCategory(cat)}
+                        className={`whitespace-nowrap px-3 py-1 font-bold border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-y-1 text-sm md:text-base
+                          ${posSelectedCategory === cat ? 'bg-neo-purple text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto max-h-[600px] p-2 pt-3 pr-4 pb-6">
@@ -679,33 +681,35 @@ export default function Admin() {
               </div>
 
               {/* KANAN: Struk/Cart */}
-              <div className="w-full lg:w-1/3 bg-white border-4 border-black shadow-[6px_6px_0_0_black] p-4 sticky top-24">
-                <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase">Keranjang Kasir</h3>
+              <div className="w-full lg:w-1/3 bg-white border-4 border-black shadow-[6px_6px_0_0_black] p-4 sticky top-24 flex flex-col min-h-[calc(100vh-120px)]">
+                <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase shrink-0">Keranjang Kasir</h3>
                 
-                <div className="flex flex-col gap-3 min-h-[250px] max-h-[400px] overflow-y-auto mb-4 border-b-4 border-dashed border-gray-300 pb-4">
-                  {posCart.length === 0 ? (
-                    <div className="m-auto text-gray-400 font-bold text-center">Keranjang masih kosong</div>
-                  ) : (
-                    posCart.map(item => (
-                      <div key={item.id} className="flex justify-between items-start gap-2 text-sm bg-gray-50 border-2 border-dashed border-gray-400 p-2">
-                        <div className="flex-1">
-                          <p className="font-bold leading-tight">{item.nama}</p>
-                          <p className="text-xs text-gray-600 mt-1">{formatRupiah(item.harga)} x {item.qty}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <p className="font-black">{formatRupiah(item.harga * item.qty)}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <button onClick={() => updatePosQty(item.id, -1)} className="w-6 h-6 flex items-center justify-center bg-red-200 border border-black font-bold active:translate-y-0.5">-</button>
-                            <span className="font-bold">{item.qty}</span>
-                            <button onClick={() => updatePosQty(item.id, 1)} className="w-6 h-6 flex items-center justify-center bg-green-200 border border-black font-bold active:translate-y-0.5">+</button>
+                <div className="flex-1 overflow-y-auto mb-4 border-b-4 border-dashed border-gray-300 pb-4">
+                  <div className="flex flex-col gap-3">
+                    {posCart.length === 0 ? (
+                      <div className="m-auto text-gray-400 font-bold text-center py-10">Keranjang masih kosong</div>
+                    ) : (
+                      posCart.map(item => (
+                        <div key={item.id} className="flex justify-between items-start gap-2 text-sm bg-gray-50 border-2 border-dashed border-gray-400 p-2">
+                          <div className="flex-1">
+                            <p className="font-bold leading-tight">{item.nama}</p>
+                            <p className="text-xs text-gray-600 mt-1">{formatRupiah(item.harga)} x {item.qty}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <p className="font-black">{formatRupiah(item.harga * item.qty)}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <button onClick={() => updatePosQty(item.id, -1)} className="w-6 h-6 flex items-center justify-center bg-red-200 border border-black font-bold active:translate-y-0.5">-</button>
+                              <span className="font-bold">{item.qty}</span>
+                              <button onClick={() => updatePosQty(item.id, 1)} className="w-6 h-6 flex items-center justify-center bg-green-200 border border-black font-bold active:translate-y-0.5">+</button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 shrink-0">
                   <div className="flex justify-between items-center text-xl">
                     <span className="font-bold uppercase">Total Belanja</span>
                     <span className="font-black text-2xl">{formatRupiah(posTotal)}</span>
