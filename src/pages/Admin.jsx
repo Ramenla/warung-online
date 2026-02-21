@@ -480,7 +480,7 @@ export default function Admin() {
   const handleNavClick = (id) => { setActiveView(id); setIsSidebarOpen(false); };
 
   return (
-    <div className="min-h-screen bg-neo-bg font-sans text-black flex">
+    <div className="flex h-screen w-full overflow-hidden bg-neo-bg font-sans text-black selection:bg-neo-purple selection:text-white">
 
       {/* Custom Modals */}
       <ConfirmModal open={confirmState.open} title={confirmState.title} message={confirmState.message} onConfirm={confirmState.onConfirm} onCancel={closeConfirm} />
@@ -493,7 +493,7 @@ export default function Admin() {
 
       {/* ====== SIDEBAR (WHITE) ====== */}
       <aside className={`
-        fixed md:sticky top-0 left-0 h-screen z-50 md:z-auto
+        fixed md:sticky top-0 left-0 h-full overflow-y-auto z-50 md:z-auto
         bg-white text-black border-r-4 border-black
         flex flex-col flex-shrink-0
         transition-all duration-300 ease-in-out
@@ -547,7 +547,7 @@ export default function Admin() {
       </aside>
 
       {/* ====== MAIN CONTENT ====== */}
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex-1 h-full flex flex-col overflow-hidden">
 
         {/* Mobile Topbar */}
         <div className="sticky top-0 z-30 flex items-center justify-between bg-white border-b-4 border-black px-4 py-3 md:hidden shadow-md">
@@ -558,7 +558,7 @@ export default function Admin() {
           <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1.5 font-bold border-2 border-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">Keluar</button>
         </div>
 
-        <div className="p-4 md:p-8 space-y-6 pb-20">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 pb-20">
           {loading && <div className="p-10 text-center font-black animate-pulse text-xl">Memuat data...</div>}
 
           {/* =============== DASHBOARD =============== */}
@@ -624,17 +624,17 @@ export default function Admin() {
 
           {/* =============== KASIR (POS) =============== */}
           {!loading && activeView === 'kasir' && (
-            <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full overflow-hidden pb-4">
               
               {/* KIRI: Etalase */}
-              <div className="w-full lg:w-2/3 flex flex-col gap-4">
-                <div className="sticky top-16 z-20 bg-neo-bg pt-2 pb-2">
+              <div className="col-span-2 flex flex-col h-full overflow-hidden border-r-4 border-black">
+                <div className="p-4 border-b-4 border-black bg-white shrink-0">
                   <input 
                     type="text" 
                     placeholder="Scan atau cari nama barang..." 
                     value={posSearch} 
                     onChange={(e) => setPosSearch(e.target.value)} 
-                    className="w-full p-4 text-xl border-4 border-black font-black focus:outline-none shadow-[4px_4px_0_0_black] bg-white mb-2" 
+                    className="w-full p-4 text-xl border-4 border-black font-black focus:outline-none shadow-[4px_4px_0_0_black] bg-white mb-4" 
                     autoFocus
                   />
                   
@@ -653,7 +653,11 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto max-h-[600px] p-2 pt-3 pr-4 pb-6">
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-6">
+                    {posFilteredProducts.length === 0 && (
+                       <div className="col-span-full py-20 text-center font-bold text-gray-400">Barang tidak ditemukan</div>
+                    )}
                   {posFilteredProducts.map(p => {
                     const isOutOfStock = (p.stok || 0) <= 0;
                     return (
@@ -677,14 +681,15 @@ export default function Admin() {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               </div>
 
               {/* KANAN: Struk/Cart */}
-              <div className="w-full lg:w-1/3 bg-white border-4 border-black shadow-[6px_6px_0_0_black] p-4 sticky top-24 flex flex-col min-h-[calc(100vh-120px)]">
+              <div className="col-span-1 flex flex-col h-full overflow-hidden bg-white border-4 border-black shadow-[6px_6px_0_0_black] p-4 shrink-0">
                 <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase shrink-0">Keranjang Kasir</h3>
                 
-                <div className="flex-1 overflow-y-auto mb-4 border-b-4 border-dashed border-gray-300 pb-4">
+                <div className="flex-1 overflow-y-auto p-4 mb-4 border-b-4 border-dashed border-gray-300">
                   <div className="flex flex-col gap-3">
                     {posCart.length === 0 ? (
                       <div className="m-auto text-gray-400 font-bold text-center py-10">Keranjang masih kosong</div>
