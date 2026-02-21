@@ -783,9 +783,9 @@ export default function Admin() {
                     <button onClick={openAddModal} className="bg-neo-teal text-black font-black py-2 px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-sm">+ Tambah Produk</button>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-auto max-h-[60vh] border-2 border-black">
                   <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
-                    <thead>
+                    <thead className="sticky top-0 z-10">
                       <tr className="bg-black text-white uppercase text-xs">
                         <th className="p-3 w-10"><input type="checkbox" checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length} onChange={toggleSelectAll} className="w-5 h-5 accent-[#ffde59] cursor-pointer" /></th>
                         <th className="p-3">Produk</th><th className="p-3">Kategori</th><th className="p-3">Harga</th><th className="p-3 text-center">Stok</th><th className="p-3 text-center">Aksi</th>
