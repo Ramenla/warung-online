@@ -97,14 +97,22 @@ export default function Admin() {
   const [posKasbonName, setPosKasbonName] = useState('');
 
   // ========== FETCH ==========
+  // ========== STOREFRONT SECTIONS STATE ==========
+  const [sections, setSections] = useState([]);
+  const [showSectionModal, setShowSectionModal] = useState(false);
+  const [sectionForm, setSectionForm] = useState({ id: null, nama: '', urutan: 0, produk_ids: [] });
+  const [searchTermSection, setSearchTermSection] = useState('');
+
+  // ========== FETCH ==========
   useEffect(() => { fetchAll(); }, []);
-  const fetchAll = async () => { setLoading(true); await Promise.all([fetchProducts(), fetchCategories(), fetchUnits(), fetchOrders(), fetchArusKas(), fetchKasbon()]); setLoading(false); };
+  const fetchAll = async () => { setLoading(true); await Promise.all([fetchProducts(), fetchCategories(), fetchUnits(), fetchOrders(), fetchArusKas(), fetchKasbon(), fetchSections()]); setLoading(false); };
   const fetchProducts = async () => { const { data, error } = await supabase.from('produk').select('*').order('id', { ascending: false }); if (error) handleSupabaseError(error); setProducts(data || []); };
   const fetchCategories = async () => { const { data, error } = await supabase.from('kategori').select('*').order('nama'); if (error) handleSupabaseError(error); setCategories(data || []); };
   const fetchUnits = async () => { const { data, error } = await supabase.from('satuan').select('*').order('nama'); if (error) handleSupabaseError(error); setUnits(data || []); };
   const fetchOrders = async () => { const { data, error } = await supabase.from('transaksi').select('*').order('created_at', { ascending: false }); if (error) handleSupabaseError(error); setOrders(data || []); };
   const fetchArusKas = async () => { const { data, error } = await supabase.from('arus_kas').select('*').order('created_at', { ascending: false }); if (error) handleSupabaseError(error); setArusKas(data || []); };
   const fetchKasbon = async () => { const { data, error } = await supabase.from('kasbon').select('*').order('created_at', { ascending: false }); if (error) handleSupabaseError(error); setKasbon(data || []); };
+  const fetchSections = async () => { const { data, error } = await supabase.from('storefront_sections').select('*').order('urutan', { ascending: true }); if (error) handleSupabaseError(error); setSections(data || []); };
 
   // ========== PRODUCT HANDLERS ==========
   const handleInputChange = (e) => { const { name, value, files } = e.target; if (name === 'file') setFormData({ ...formData, file: files[0] }); else setFormData({ ...formData, [name]: value }); };
@@ -468,8 +476,42 @@ export default function Admin() {
   const filteredProducts = products.filter(p => p.nama.toLowerCase().includes(searchQuery.toLowerCase()) || (p.kategori && p.kategori.toLowerCase().includes(searchQuery.toLowerCase())));
   const maxFinancial = Math.max(totalPemasukan, totalPengeluaran, 1);
 
+  // ========== SECTIONS HANDLERS ==========
+  const openSectionModal = (s = null) => {
+    if (s) setSectionForm({ id: s.id, nama: s.nama, urutan: s.urutan, produk_ids: s.produk_ids || [] });
+    else setSectionForm({ id: null, nama: '', urutan: 0, produk_ids: [] });
+    setSearchTermSection('');
+    setShowSectionModal(true);
+  };
+  const handleSectionSubmit = async (e) => {
+    e.preventDefault();
+    if (!sectionForm.nama) { showAlert('Nama section wajib diisi!'); return; }
+    const payload = { nama: sectionForm.nama, urutan: parseInt(sectionForm.urutan) || 0, produk_ids: sectionForm.produk_ids };
+    
+    if (sectionForm.id) {
+      const { error } = await supabase.from('storefront_sections').update(payload).eq('id', sectionForm.id);
+      if (error) showAlert('Gagal update: ' + error.message);
+    } else {
+      const { error } = await supabase.from('storefront_sections').insert([payload]);
+      if (error) showAlert('Gagal simpan: ' + error.message);
+    }
+    setShowSectionModal(false);
+    fetchSections();
+  };
+  const handleDeleteSection = async (id) => {
+    const ok = await showConfirm('Hapus Section', 'Hapus custom section ini?');
+    if (ok) { await supabase.from('storefront_sections').delete().eq('id', id); fetchSections(); }
+  };
+  const toggleSectionProduct = (productId) => {
+    setSectionForm(prev => {
+      const ids = prev.produk_ids || [];
+      return { ...prev, produk_ids: ids.includes(productId) ? ids.filter(id => id !== productId) : [...ids, productId] };
+    });
+  };
+
   const navItems = [
     { id: 'dashboard', label: 'Dasbor Utama', short: 'D' },
+    { id: 'etalase', label: 'Atur Etalase', short: 'E' },
     { id: 'kasir', label: 'Mesin Kasir', short: 'M' },
     { id: 'produk', label: 'Daftar Produk', short: 'P' },
     { id: 'pesanan', label: 'Pesanan Masuk', short: 'O' },
@@ -619,6 +661,109 @@ export default function Admin() {
                   </div>
                 )}
               </div>
+            </>
+          )}
+
+          {/* =============== ATUR ETALASE =============== */}
+          {!loading && activeView === 'etalase' && (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="font-black text-2xl uppercase">Manajemen Etalase</h2>
+                <button onClick={() => openSectionModal()} className="bg-neo-purple text-white px-4 py-2 font-black border-2 border-black shadow-[3px_3px_0_0_black] hover:translate-y-1 hover:shadow-[1px_1px_0_0_black] transition-all">+ Tambah Section</button>
+              </div>
+
+              {sections.length === 0 ? (
+                <div className="bg-white border-4 border-black border-dashed p-10 text-center">
+                  <p className="font-black text-xl text-gray-500 mb-2">Belum ada custom section.</p>
+                  <p className="font-bold text-gray-400">Gunakan fitur ini untuk membuat section seperti "Promo Lebaran" di halaman katalog.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sections.map(s => (
+                    <div key={s.id} className="bg-white border-4 border-black p-4 shadow-[4px_4px_0_0_black]">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-black text-xl uppercase bg-[#ffde59] px-2 border-2 border-black transform -rotate-1 inline-block">{s.nama}</h3>
+                        <div className="flex gap-2 text-sm">
+                          <button onClick={() => openSectionModal(s)} className="bg-neo-teal text-black px-2 py-1 font-bold border-2 border-black shadow-[2px_2px_0_0_black] hover:translate-y-0.5 hover:shadow-none">Edit</button>
+                          <button onClick={() => handleDeleteSection(s.id)} className="bg-red-500 text-white px-2 py-1 font-bold border-2 border-black shadow-[2px_2px_0_0_black] hover:translate-y-0.5 hover:shadow-none">Hapus</button>
+                        </div>
+                      </div>
+                      <p className="font-bold text-sm text-gray-600 mb-2">Urutan Tampil: <span className="text-black text-base">{s.urutan}</span></p>
+                      <p className="font-bold text-sm text-gray-600">Jumlah Produk: <span className="text-black text-base">{(s.produk_ids || []).length}</span></p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* MODAL TAMBAH/EDIT SECTION */}
+              {showSectionModal && (
+                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+                  <div className="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col border-4 border-black shadow-[8px_8px_0_0_black]">
+                    <div className="p-4 border-b-4 border-black flex justify-between items-center shrink-0">
+                      <h3 className="font-black text-xl uppercase">{sectionForm.id ? 'Edit Section' : 'Tambah Section'}</h3>
+                      <button onClick={() => setShowSectionModal(false)} className="font-black text-xl hover:text-red-500">X</button>
+                    </div>
+                    
+                    <form onSubmit={handleSectionSubmit} className="flex-1 flex flex-col overflow-hidden">
+                      <div className="p-4 flex-1 overflow-y-auto space-y-4">
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="col-span-2">
+                            <label className="block font-black mb-1">Nama Section <span className="text-red-500">*</span></label>
+                            <input type="text" value={sectionForm.nama} onChange={(e) => setSectionForm({...sectionForm, nama: e.target.value})} className="w-full p-2 border-4 border-black font-bold focus:outline-none focus:shadow-[4px_4px_0_0_black] transition-all bg-yellow-50" placeholder="Cth: Promo Ramadhan" required />
+                          </div>
+                          <div className="col-span-1">
+                            <label className="block font-black mb-1">Urutan</label>
+                            <input type="number" value={sectionForm.urutan} onChange={(e) => setSectionForm({...sectionForm, urutan: e.target.value})} className="w-full p-2 border-4 border-black font-bold focus:outline-none focus:shadow-[4px_4px_0_0_black] transition-all bg-yellow-50" placeholder="1" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-black mb-2">Pilih Produk Untuk Ditampilkan</label>
+                          <input 
+                            type="text" 
+                            placeholder="Cari nama barang..." 
+                            className="w-full p-2 mb-4 border-4 border-black font-bold focus:outline-none focus:shadow-[4px_4px_0_0_black] transition-all"
+                            value={searchTermSection}
+                            onChange={(e) => setSearchTermSection(e.target.value)}
+                          />
+                          <div className="border-4 border-black h-64 overflow-y-auto bg-gray-50 p-2 text-sm grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {(() => {
+                              const filteredProdukForSection = products.filter(p => p.nama.toLowerCase().includes(searchTermSection.toLowerCase()));
+                              
+                              if (products.length === 0) return <p className="text-gray-500 italic p-4 text-center col-span-2">Belum ada produk untuk dipilih.</p>;
+                              if (filteredProdukForSection.length === 0) return <p className="text-gray-500 italic p-4 text-center col-span-2">Barang tidak ditemukan.</p>;
+                              
+                              return filteredProdukForSection.map(p => {
+                                const isChecked = (sectionForm.produk_ids || []).includes(p.id);
+                                return (
+                                  <label key={p.id} className={`flex items-start gap-2 p-2 border-2 border-black cursor-pointer bg-white hover:bg-yellow-50 transition-colors ${isChecked ? 'shadow-[2px_2px_0_0_black] !bg-[#ffde59]' : ''}`}>
+                                    <input 
+                                      type="checkbox" 
+                                      checked={isChecked}
+                                      onChange={() => toggleSectionProduct(p.id)}
+                                      className="mt-1 w-4 h-4 accent-black" 
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-bold truncate">{p.nama}</p>
+                                      <p className="text-xs text-gray-700">{formatRupiah(p.harga)} - {p.kategori}</p>
+                                    </div>
+                                  </label>
+                                );
+                              });
+                            })()}
+                          </div>
+                          <p className="font-bold text-xs mt-2 bg-black text-white px-2 py-1 inline-block">Terpilih: {(sectionForm.produk_ids || []).length} produk</p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border-t-4 border-black bg-gray-100 flex justify-end gap-2 shrink-0">
+                        <button type="button" onClick={() => setShowSectionModal(false)} className="px-4 py-2 font-bold border-4 border-black bg-white shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all">Batal</button>
+                        <button type="submit" className="px-4 py-2 font-black border-4 border-black bg-neo-teal text-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase">Simpan Section</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -983,7 +1128,7 @@ export default function Admin() {
       {/* ====== MODALS ====== */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white w-[95%] max-w-lg border-4 border-black shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] p-6 relative max-h-[90vh] overflow-y-auto rounded-lg">
+          <div className="bg-white w-[95%] max-w-lg border-4 border-black shadow-[8px_8px_0px_0px_black] p-6 relative max-h-[90vh] overflow-y-auto ">
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-2xl font-black text-red-500">&times;</button>
             <h2 className="text-2xl font-black mb-6 border-b-4 border-black pb-2 uppercase">{isEditing ? 'Edit Produk' : 'Tambah Produk'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
