@@ -66,13 +66,13 @@ const CartSidebar = ({ isOpen, onClose }) => {
         transaksi_id: transaksiId
       }]);
       if (kasbonError) {
-        alert('Gagal menyimpan data kasbon: ' + kasbonError.message);
+        alert('Gagal menyimpan data paylater: ' + kasbonError.message);
         setProcessing(false);
         return;
       }
     }
 
-    const phoneNumber = '6287874668656';
+    const phoneNumber = '6289501370501';
     const shortId = String(transaksiId).substring(0, 8).toUpperCase();
     
     const itemList = cart.map(item => {
@@ -84,8 +84,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
     const message = `Halo, saya *${namaPembeli}*.\n\nNo. Order: *${shortId}*\n\n${itemList}\n\n*Total: ${formatRupiah(totalPrice)}*\n\nPengiriman: ${deliveryInfo}\nPembayaran: ${paymentInfo}\n${catatan ? `Catatan: ${catatan}` : ''}\n\nMohon diproses. Terima kasih!`;
 
-    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
-
+    // Clear cart and state first
     clearCart();
     setNamaPembeli('');
     setCatatan('');
@@ -94,6 +93,10 @@ const CartSidebar = ({ isOpen, onClose }) => {
     setPaymentMethod('COD');
     setProcessing(false);
     onClose();
+
+    // Redirect to WhatsApp using window.location.href to bypass pop-up blockers
+    // Make sure the phoneNumber variable matches your actual WhatsApp number
+    window.location.href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -164,7 +167,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                         <button key={opt} type="button" onClick={() => setPaymentMethod(opt)}
                           className={`flex-1 py-2 font-bold border-2 border-black transition-all
                           ${paymentMethod === opt ? 'bg-black text-white shadow-none' : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none'}`}
-                        >{opt === 'COD' ? 'Tunai (COD)' : opt === 'Kasbon' ? 'Kasbon (Nanti)' : 'QRIS'}</button>
+                        >{opt === 'COD' ? 'Tunai (COD)' : opt === 'Kasbon' ? 'Paylater (Nanti)' : 'QRIS'}</button>
                       ))}
                     </div>
                     {paymentMethod === 'QRIS' && (
