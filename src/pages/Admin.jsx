@@ -104,8 +104,36 @@ export default function Admin() {
   const [searchTermSection, setSearchTermSection] = useState('');
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
+  const [pesananBaru, setPesananBaru] = useState(null);
+  const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
   // ========== FETCH ==========
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { 
+    fetchAll(); 
+
+    // Setup Realtime Listener for new orders
+    const channel = supabase
+      .channel('realtime-pesanan')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'transaksi' },
+        (payload) => {
+          setPesananBaru(payload.new);
+          notifSound.play().catch(e => console.log("Audio play di-block browser"));
+          
+          fetchOrders(); // Refresh order list automatically
+          
+          setTimeout(() => {
+            setPesananBaru(null);
+          }, 5000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   const fetchAll = async () => { setLoading(true); await Promise.all([fetchProducts(), fetchCategories(), fetchUnits(), fetchOrders(), fetchArusKas(), fetchKasbon(), fetchSections()]); setLoading(false); };
   const fetchProducts = async () => { const { data, error } = await supabase.from('produk').select('*').order('id', { ascending: false }); if (error) handleSupabaseError(error); setProducts(data || []); };
   const fetchCategories = async () => { const { data, error } = await supabase.from('kategori').select('*').order('nama'); if (error) handleSupabaseError(error); setCategories(data || []); };
@@ -600,6 +628,15 @@ export default function Admin() {
           <h2 className="font-black text-base uppercase truncate">{navItems.find(n => n.id === activeView)?.label}</h2>
           <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1.5 font-bold border-2 border-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">Keluar</button>
         </div>
+
+        {/* Notifikasi Pesanan Baru */}
+        {pesananBaru && (
+          <div className="fixed top-6 right-6 z-[100] bg-[#ffde59] border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] animate-bounce cursor-pointer max-w-xs" onClick={() => setPesananBaru(null)}>
+            <h3 className="font-black text-lg uppercase mb-1">Pesanan Baru Masuk!</h3>
+            <p className="font-bold">Metode: {pesananBaru.metode_pembayaran}</p>
+            <p className="text-sm mt-1">Silakan cek tabel pesanan.</p>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-2 md:p-6 space-y-6 pb-20">
           {loading && <div className="p-10 text-center font-black animate-pulse text-xl">Memuat data...</div>}
