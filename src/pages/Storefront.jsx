@@ -119,7 +119,7 @@ export default function Storefront() {
               <header className="flex justify-between items-center mb-4">
                 <div>
                     <h1 className="text-3xl md:text-5xl font-black text-black uppercase tracking-tight">
-                        Katalog <span className="text-neo-orange">Warung</span>
+                        TOKO <span className="text-neo-orange">SEMOGA BERKAH</span>
                     </h1>
                 </div>
               </header>
