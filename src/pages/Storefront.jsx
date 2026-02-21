@@ -169,7 +169,7 @@ export default function Storefront() {
                   if (sectionProducts.length === 0) return null; // Don't show empty sections
                   return (
                     <section key={section.id}>
-                      <h2 className="text-xl md:text-2xl font-black mb-4 inline-block bg-[#ffde59] text-black px-3 py-1 transform -rotate-1 border-4 border-black uppercase mt-4 shadow-[4px_4px_0_0_black]">
+                      <h2 className="text-lg md:text-2xl lg:text-3xl font-black uppercase tracking-wide truncate mb-2 md:mb-4 inline-block bg-[#ffde59] text-black px-3 py-1 transform -rotate-1 border-4 border-black mt-4 shadow-[4px_4px_0_0_black] pr-4 max-w-full">
                         {section.nama}
                       </h2>
                       <div className="flex overflow-x-auto gap-3 md:gap-4 pb-4 pt-2 px-1 snap-x scrollbar-hide">
@@ -186,7 +186,7 @@ export default function Storefront() {
                 {/* All Products Section (when NOT searching) */}
                 {!isSearching && (
                   <section className={sections.length > 0 ? "pt-1" : ""}>
-                    <h2 className="text-xl md:text-2xl font-black mb-4 inline-block bg-black text-white px-3 py-1 transform -rotate-1 border-2 border-neo-orange uppercase 2 mt-2">
+                    <h2 className="text-lg md:text-2xl lg:text-3xl font-black uppercase tracking-wide truncate mb-2 md:mb-4 inline-block bg-black text-white px-3 py-1 transform -rotate-1 border-2 border-neo-orange mt-2 pr-4 max-w-full">
                       {sections.length > 0 ? "SEMUA PRODUK" : "KATALOG"}
                     </h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 w-full">

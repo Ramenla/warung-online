@@ -102,6 +102,7 @@ export default function Admin() {
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [sectionForm, setSectionForm] = useState({ id: null, nama: '', urutan: 0, produk_ids: [] });
   const [searchTermSection, setSearchTermSection] = useState('');
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
   // ========== FETCH ==========
   useEffect(() => { fetchAll(); }, []);
@@ -600,7 +601,7 @@ export default function Admin() {
           <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1.5 font-bold border-2 border-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">Keluar</button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 pb-20">
+        <div className="flex-1 overflow-y-auto p-2 md:p-6 space-y-6 pb-20">
           {loading && <div className="p-10 text-center font-black animate-pulse text-xl">Memuat data...</div>}
 
           {/* =============== DASHBOARD =============== */}
@@ -668,8 +669,8 @@ export default function Admin() {
           {!loading && activeView === 'etalase' && (
             <>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="font-black text-2xl uppercase">Manajemen Etalase</h2>
-                <button onClick={() => openSectionModal()} className="bg-neo-purple text-white px-4 py-2 font-black border-2 border-black shadow-[3px_3px_0_0_black] hover:translate-y-1 hover:shadow-[1px_1px_0_0_black] transition-all">+ Tambah Section</button>
+                <h2 className="font-black text-xl md:text-3xl uppercase">Manajemen Etalase</h2>
+                <button onClick={() => openSectionModal()} className="bg-neo-purple text-white px-2 py-1 md:px-4 md:py-2 text-xs md:text-base font-black border-2 border-black shadow-[3px_3px_0_0_black] hover:translate-y-1 hover:shadow-[1px_1px_0_0_black] transition-all">+ Tambah Section</button>
               </div>
 
               {sections.length === 0 ? (
@@ -769,10 +770,10 @@ export default function Admin() {
 
           {/* =============== KASIR (POS) =============== */}
           {!loading && activeView === 'kasir' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full overflow-hidden pb-4">
+            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-0 lg:gap-6 h-full overflow-hidden pb-4">
               
               {/* KIRI: Etalase */}
-              <div className="col-span-2 flex flex-col h-full overflow-hidden border-r-4 border-black">
+              <div className="col-span-2 flex-1 h-full overflow-y-auto p-2 md:p-4 pb-24 lg:pb-4 flex flex-col border-r-0 lg:border-r-4 border-black">
                 <div className="p-4 border-b-4 border-black bg-white shrink-0">
                   <input 
                     type="text" 
@@ -799,7 +800,7 @@ export default function Admin() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 pb-6">
                     {posFilteredProducts.length === 0 && (
                        <div className="col-span-full py-20 text-center font-bold text-gray-400">Barang tidak ditemukan</div>
                     )}
@@ -817,10 +818,10 @@ export default function Admin() {
                               <img src={p.image_url} alt={p.nama} className="w-full h-full object-cover" />
                             ) : <span className="text-gray-400 font-bold text-xs">No Image</span>}
                           </div>
-                          <h4 className="font-bold text-sm leading-tight line-clamp-2">{p.nama}</h4>
+                          <h4 className="font-bold text-xs md:text-sm leading-tight line-clamp-2">{p.nama}</h4>
                         </div>
                         <div className="mt-2">
-                          <p className="font-black text-neo-teal">{formatRupiah(p.harga)}</p>
+                          <p className="font-black text-sm md:text-base text-neo-teal">{formatRupiah(p.harga)}</p>
                           <p className={`text-xs font-bold mt-1 ${isOutOfStock ? 'text-red-600' : 'text-gray-600'}`}>Stok: {p.stok || 0}</p>
                         </div>
                       </div>
@@ -830,8 +831,8 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* KANAN: Struk/Cart */}
-              <div className="col-span-1 flex flex-col h-full overflow-hidden bg-white border-4 border-black shadow-[6px_6px_0_0_black] p-4 shrink-0">
+              {/* KANAN: Struk/Cart (HIDDEN ON MOBILE, ONLY ON DESKTOP) */}
+              <div className="hidden lg:flex flex-col col-span-1 h-full overflow-hidden border-4 border-black bg-white p-4 shrink-0 shadow-[6px_6px_0_0_black]">
                 <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase shrink-0">Keranjang Kasir</h3>
                 
                 <div className="flex-1 overflow-y-auto p-4 mb-4 border-b-4 border-dashed border-gray-300">
@@ -903,6 +904,112 @@ export default function Admin() {
                 </div>
               </div>
 
+              {/* ======== MOBILE ONLY: FLOATING SUMMARY BAR ======== */}
+              {posCart.length > 0 && (
+                <div 
+                  className="fixed bottom-0 left-0 w-full bg-[#ffde59] border-t-4 border-black p-4 cursor-pointer z-40 flex justify-between items-center lg:hidden shadow-[0_-4px_0_0_rgba(0,0,0,0.1)] hover:bg-[#ffe373] transition-colors"
+                  onClick={() => setIsMobileCartOpen(true)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-black text-white w-8 h-8 flex items-center justify-center font-black rounded-full border-2 border-white shadow-[2px_2px_0_0_black]">
+                      {posCart.reduce((acc, item) => acc + item.qty, 0)}
+                    </div>
+                    <span className="font-black uppercase text-sm">Lihat Keranjang</span>
+                  </div>
+                  <div className="font-black text-lg">
+                    {formatRupiah(posTotal)}
+                  </div>
+                </div>
+              )}
+
+              {/* ======== MOBILE ONLY: BOTTOM SHEET MODAL CHECKOUT ======== */}
+              {isMobileCartOpen && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-end lg:hidden backdrop-blur-sm transition-opacity" onClick={() => setIsMobileCartOpen(false)}>
+                  <div 
+                    className="bg-white w-full max-h-[85vh] rounded-t-2xl border-t-4 border-l-4 border-r-4 border-black flex flex-col overflow-hidden relative animate-slide-up"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Header Modal */}
+                    <div className="flex justify-between items-center p-4 border-b-4 border-black bg-[#ffde59] shrink-0">
+                      <h3 className="font-black text-xl uppercase">Ringkasan Pesanan</h3>
+                      <button onClick={() => setIsMobileCartOpen(false)} className="text-2xl font-black text-red-600 w-8 h-8 flex items-center justify-center border-2 border-black bg-white shadow-[2px_2px_0_0_black] active:shadow-none active:translate-y-0.5">&times;</button>
+                    </div>
+
+                    {/* Isi Keranjang Mobile */}
+                    <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                      <div className="flex flex-col gap-3">
+                        {posCart.map(item => (
+                          <div key={item.id} className="flex justify-between items-start gap-2 text-sm bg-white border-2 border-black p-3 shadow-[2px_2px_0_0_black]">
+                            <div className="flex-1">
+                              <p className="font-bold leading-tight text-base mb-1">{item.nama}</p>
+                              <p className="text-xs text-gray-600 font-bold">{formatRupiah(item.harga)}</p>
+                            </div>
+                            <div className="flex flex-col items-end justify-between h-full">
+                              <p className="font-black text-neo-teal text-base mb-2">{formatRupiah(item.harga * item.qty)}</p>
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => updatePosQty(item.id, -1)} className="w-7 h-7 flex items-center justify-center bg-red-200 border-2 border-black font-black active:translate-y-0.5 text-lg">-</button>
+                                <span className="font-black w-6 text-center">{item.qty}</span>
+                                <button onClick={() => updatePosQty(item.id, 1)} className="w-7 h-7 flex items-center justify-center bg-green-200 border-2 border-black font-black active:translate-y-0.5 text-lg">+</button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Footer / Pembayaran Mobile */}
+                    <div className="p-4 border-t-4 border-black bg-white shrink-0 space-y-3 pb-8">
+                      <div className="flex justify-between items-center text-xl mb-2">
+                        <span className="font-black uppercase">Total Bayar</span>
+                        <span className="font-black text-2xl text-neo-teal">{formatRupiah(posTotal)}</span>
+                      </div>
+                      
+                      <div>
+                        <label className="block font-bold text-xs uppercase mb-1">Diterima (Cash)</label>
+                        <input 
+                          type="text" 
+                          inputMode="numeric"
+                          value={uangTunai ? new Intl.NumberFormat('id-ID').format(uangTunai) : ''} 
+                          onChange={(e) => setUangTunai(e.target.value.replace(/\D/g, ''))}
+                          className="w-full p-3 border-4 border-black font-black text-lg focus:outline-none"
+                          placeholder="0"
+                        />
+                      </div>
+                      
+                      {uangTunai !== '' && (
+                        <div className={`flex justify-between items-center p-3 border-4 border-black ${kembalian < 0 ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-900'}`}>
+                          <span className="font-bold uppercase text-xs">Kembalian</span>
+                          <span className="font-black text-lg">{kembalian < 0 ? 'Duit Kurang!' : formatRupiah(kembalian)}</span>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-3 mt-2">
+                        <button 
+                          onClick={async () => {
+                            await handlePosCheckout();
+                            if (posCart.length === 0) setIsMobileCartOpen(false); // Close if successful
+                          }}
+                          disabled={isCheckoutLoading || posCart.length === 0 || (uangTunai !== '' && kembalian < 0)}
+                          className="bg-neo-teal text-black py-3 font-black text-sm border-4 border-black shadow-[4px_4px_0_0_black] active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:grayscale transition-all"
+                        >
+                          {isCheckoutLoading ? 'PROSES...' : 'TUNAI'}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setIsMobileCartOpen(false);
+                            setShowPosKasbonPrompt(true);
+                          }}
+                          disabled={isCheckoutLoading || posCart.length === 0}
+                          className="bg-yellow-400 text-black py-3 font-black text-sm border-4 border-black shadow-[4px_4px_0_0_black] active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:grayscale transition-all"
+                        >
+                          PAYLATER
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
@@ -910,7 +1017,7 @@ export default function Admin() {
           {!loading && activeView === 'produk' && (
             <>
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <h2 className="font-black text-2xl uppercase hidden md:block">Manajemen Produk</h2>
+                <h2 className="font-black text-xl md:text-3xl uppercase hidden md:block">Manajemen Produk</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -923,40 +1030,40 @@ export default function Admin() {
                   <input type="text" placeholder="Cari produk..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full md:w-1/3 p-2 font-bold border-4 border-black focus:outline-none bg-gray-100" />
                   <div className="flex gap-2">
                     {selectedProductIds.length > 0 && (
-                      <button onClick={handleBulkDelete} className="bg-red-500 text-white font-bold py-2 px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-sm">Hapus {selectedProductIds.length} Terpilih</button>
+                      <button onClick={handleBulkDelete} className="bg-red-500 text-white font-bold py-1 px-2 md:py-2 md:px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-xs md:text-sm">Hapus {selectedProductIds.length} Terpilih</button>
                     )}
-                    <button onClick={openAddModal} className="bg-neo-teal text-black font-black py-2 px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-sm">+ Tambah Produk</button>
+                    <button onClick={openAddModal} className="bg-neo-teal text-black font-black py-1 px-2 md:py-2 md:px-4 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-xs md:text-sm">+ Tambah Produk</button>
                   </div>
                 </div>
-                <div className="overflow-auto max-h-[60vh] border-2 border-black">
-                  <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
+                <div className="w-full overflow-x-auto border-4 border-black bg-white max-h-[60vh]">
+                  <table className="w-full text-left border-collapse whitespace-nowrap text-xs md:text-sm">
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-black text-white uppercase text-xs">
-                        <th className="p-3 w-10"><input type="checkbox" checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length} onChange={toggleSelectAll} className="w-5 h-5 accent-[#ffde59] cursor-pointer" /></th>
-                        <th className="p-3">Produk</th><th className="p-3">Kategori</th><th className="p-3">Harga</th><th className="p-3 text-center">Stok</th><th className="p-3 text-center">Aksi</th>
+                        <th className="p-3 w-10 whitespace-nowrap"><input type="checkbox" checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length} onChange={toggleSelectAll} className="w-5 h-5 accent-[#ffde59] cursor-pointer" /></th>
+                        <th className="p-3 whitespace-nowrap">Produk</th><th className="p-3 whitespace-nowrap">Kategori</th><th className="p-3 whitespace-nowrap">Harga</th><th className="p-3 text-center whitespace-nowrap">Stok</th><th className="p-3 text-center whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="font-bold">
                       {filteredProducts.map(p => (
                         <tr key={p.id} className={`border-b-2 border-gray-200 hover:bg-yellow-50 ${selectedProductIds.includes(p.id) ? 'bg-yellow-100' : ''}`}>
-                          <td className="p-3"><input type="checkbox" checked={selectedProductIds.includes(p.id)} onChange={() => toggleSelectProduct(p.id)} className="w-5 h-5 accent-black cursor-pointer" /></td>
-                          <td className="p-3 flex items-center gap-2">
+                          <td className="p-3 whitespace-nowrap"><input type="checkbox" checked={selectedProductIds.includes(p.id)} onChange={() => toggleSelectProduct(p.id)} className="w-5 h-5 accent-black cursor-pointer" /></td>
+                          <td className="p-3 whitespace-nowrap flex items-center gap-2">
                             <div className="w-8 h-8 bg-gray-200 border border-black overflow-hidden flex-shrink-0">{p.image_url && <img src={p.image_url} className="w-full h-full object-cover" alt="" />}</div>
-                            <span className="truncate max-w-[120px]">{p.nama}</span>
+                            <span className="truncate max-w-[120px] md:max-w-[200px]">{p.nama}</span>
                           </td>
-                          <td className="p-3"><span className="bg-gray-100 px-2 py-1 rounded border border-black text-xs">{p.kategori}</span></td>
-                          <td className="p-3">{formatRupiah(p.harga)} <span className="text-gray-400 text-xs">/{p.satuan}</span></td>
-                          <td className="p-3 text-center">
+                          <td className="p-3 whitespace-nowrap"><span className="bg-gray-100 px-2 py-1 rounded border border-black text-xs">{p.kategori}</span></td>
+                          <td className="p-3 whitespace-nowrap">{formatRupiah(p.harga)} <span className="text-gray-400 text-xs">/{p.satuan}</span></td>
+                          <td className="p-3 text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               <button onClick={() => updateStock(p.id, p.stok, -1)} className="w-6 h-6 bg-red-200 border border-black flex items-center justify-center text-xs">-</button>
                               <span className={`min-w-[24px] ${p.stok < 5 ? 'text-red-600 font-black' : 'text-green-600'}`}>{p.stok || 0}</span>
                               <button onClick={() => updateStock(p.id, p.stok, 1)} className="w-6 h-6 bg-green-200 border border-black flex items-center justify-center text-xs">+</button>
                             </div>
                           </td>
-                          <td className="p-3 text-center">
+                          <td className="p-3 text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
-                              <button onClick={() => openEditModal(p)} className="bg-yellow-300 px-2 py-1 border border-black text-xs">EDIT</button>
-                              <button onClick={() => handleDelete(p.id)} className="bg-red-500 text-white px-2 py-1 border border-black text-xs">X</button>
+                              <button onClick={() => openEditModal(p)} className="bg-yellow-300 px-2 py-1 text-xs md:px-4 md:py-2 md:text-sm border border-black">EDIT</button>
+                              <button onClick={() => handleDelete(p.id)} className="bg-red-500 text-white px-2 py-1 text-xs md:px-4 md:py-2 md:text-sm border border-black">X</button>
                             </div>
                           </td>
                         </tr>
@@ -1014,10 +1121,12 @@ export default function Admin() {
                           </div>
                           {expandedOrder === order.id && orderDetails[order.id] && (
                             <div className="mt-3 border-t-2 border-black pt-2">
-                              <table className="w-full text-xs">
-                                <thead><tr className="bg-gray-100"><th className="p-1 text-left">Produk</th><th className="p-1 text-center">Qty</th><th className="p-1 text-right">Subtotal</th></tr></thead>
-                                <tbody>{orderDetails[order.id].map((d, i) => (<tr key={i} className="border-b border-gray-200"><td className="p-1">{d.nama_produk}</td><td className="p-1 text-center">{d.jumlah}</td><td className="p-1 text-right">{formatRupiah(d.jumlah * d.harga_satuan)}</td></tr>))}</tbody>
-                              </table>
+                              <div className="w-full overflow-x-auto border-4 border-black bg-white">
+                                <table className="w-full text-xs whitespace-nowrap">
+                                  <thead><tr className="bg-gray-100"><th className="p-2 text-left whitespace-nowrap">Produk</th><th className="p-2 text-center whitespace-nowrap">Qty</th><th className="p-2 text-right whitespace-nowrap">Subtotal</th></tr></thead>
+                                  <tbody>{orderDetails[order.id].map((d, i) => (<tr key={i} className="border-b border-gray-200"><td className="p-2 whitespace-nowrap">{d.nama_produk}</td><td className="p-2 text-center whitespace-nowrap">{d.jumlah}</td><td className="p-2 text-right whitespace-nowrap">{formatRupiah(d.jumlah * d.harga_satuan)}</td></tr>))}</tbody>
+                                </table>
+                              </div>
                               {order.catatan && <p className="text-xs mt-2 text-gray-600">Catatan: {order.catatan}</p>}
                             </div>
                           )}
@@ -1049,16 +1158,16 @@ export default function Admin() {
                   <button onClick={() => exportToCSV(arusKas, `Arus_Kas_${new Date().toLocaleDateString('id-ID')}.csv`)} className="bg-yellow-400 text-black px-3 py-1 font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all text-xs uppercase flex items-center gap-1">UNDUH Laporan (CSV)</button>
                 </div>
                 {arusKas.length === 0 ? <p className="text-center text-gray-500 font-bold py-8">Belum ada catatan.</p> : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
-                      <thead><tr className="bg-black text-white uppercase text-xs"><th className="p-3">Tanggal</th><th className="p-3">Tipe</th><th className="p-3">Keterangan</th><th className="p-3 text-right">Nominal</th></tr></thead>
+                  <div className="w-full overflow-x-auto border-4 border-black bg-white">
+                    <table className="w-full text-left border-collapse whitespace-nowrap text-xs md:text-sm">
+                      <thead><tr className="bg-black text-white uppercase text-xs"><th className="p-3 whitespace-nowrap">Tanggal</th><th className="p-3 whitespace-nowrap">Tipe</th><th className="p-3 whitespace-nowrap">Keterangan</th><th className="p-3 text-right whitespace-nowrap">Nominal</th></tr></thead>
                       <tbody className="font-bold">
                         {arusKas.map(a => (
                           <tr key={a.id} className="border-b-2 border-gray-200 hover:bg-yellow-50">
-                            <td className="p-3 text-xs">{new Date(a.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                            <td className="p-3"><span className={`px-2 py-0.5 text-xs border border-black font-bold ${a.tipe === 'Pemasukan' ? 'bg-green-200' : 'bg-red-200'}`}>{a.tipe}</span></td>
-                            <td className="p-3">{a.keterangan}</td>
-                            <td className={`p-3 text-right font-black ${a.tipe === 'Pemasukan' ? 'text-green-700' : 'text-red-600'}`}>{a.tipe === 'Pemasukan' ? '+' : '-'}{formatRupiah(a.nominal)}</td>
+                            <td className="p-3 text-xs whitespace-nowrap">{new Date(a.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                            <td className="p-3 whitespace-nowrap"><span className={`px-2 py-0.5 text-xs border border-black font-bold ${a.tipe === 'Pemasukan' ? 'bg-green-200' : 'bg-red-200'}`}>{a.tipe}</span></td>
+                            <td className="p-3 whitespace-nowrap">{a.keterangan}</td>
+                            <td className={`p-3 text-right font-black whitespace-nowrap ${a.tipe === 'Pemasukan' ? 'text-green-700' : 'text-red-600'}`}>{a.tipe === 'Pemasukan' ? '+' : '-'}{formatRupiah(a.nominal)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1078,11 +1187,11 @@ export default function Admin() {
 
               <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
                 {kasbon.length === 0 ? <p className="text-center text-gray-500 font-bold py-8">Belum ada catatan Paylater</p> : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
+                  <div className="w-full overflow-x-auto border-4 border-black bg-white">
+                    <table className="w-full text-left border-collapse whitespace-nowrap text-xs md:text-sm">
                       <thead>
                         <tr className="bg-black text-white uppercase text-xs">
-                          <th className="p-3">Tanggal Kasbon</th><th className="p-3">Pelanggan</th><th className="p-3">Keterangan</th><th className="p-3 text-right">Nominal</th><th className="p-3 text-center">Status</th><th className="p-3 text-center">Aksi</th>
+                          <th className="p-3 whitespace-nowrap">Tanggal Kasbon</th><th className="p-3 whitespace-nowrap">Pelanggan</th><th className="p-3 whitespace-nowrap">Keterangan</th><th className="p-3 text-right whitespace-nowrap">Nominal</th><th className="p-3 text-center whitespace-nowrap">Status</th><th className="p-3 text-center whitespace-nowrap">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="font-bold">
@@ -1091,24 +1200,24 @@ export default function Admin() {
                           const dateFormatted = `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
                           return (
                             <tr key={k.id} className="border-b-2 border-gray-200 hover:bg-yellow-50">
-                              <td className="p-3 text-xs">{dateFormatted}</td>
-                              <td className="p-3 text-indigo-900">{k.nama_pelanggan}</td>
-                              <td className="p-3 text-gray-600 truncate max-w-[250px]" title={k.keterangan}>{k.keterangan}</td>
-                              <td className="p-3 text-right text-red-600 font-black">{formatRupiah(k.nominal)}</td>
-                              <td className="p-3 text-center">
+                              <td className="p-3 text-xs whitespace-nowrap">{dateFormatted}</td>
+                              <td className="p-3 text-indigo-900 whitespace-nowrap">{k.nama_pelanggan}</td>
+                              <td className="p-3 text-gray-600 truncate max-w-[250px] whitespace-nowrap" title={k.keterangan}>{k.keterangan}</td>
+                              <td className="p-3 text-right text-red-600 font-black whitespace-nowrap">{formatRupiah(k.nominal)}</td>
+                              <td className="p-3 text-center whitespace-nowrap">
                                 <span className={`px-2 py-0.5 text-xs border border-black font-bold -skew-x-6 inline-block ${k.status === 'Lunas' ? 'bg-green-300 text-green-900' : 'bg-red-500 text-white'}`}>{k.status}</span>
                               </td>
-                              <td className="p-3 text-center">
+                              <td className="p-3 text-center whitespace-nowrap">
                                 {k.status === 'Belum Lunas' ? (
                                   <div className="flex gap-1 justify-center flex-wrap">
-                                    <button onClick={() => { setAddKasbonData({ id: k.id, nama: k.nama_pelanggan, nominal: '', keterangan_tambahan: '' }); setShowAddKasbonModal(true); }} className="bg-yellow-400 text-black px-2 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-yellow-500" title="Tambah Hutang">+</button>
-                                    <button onClick={() => handleDeleteKasbon(k.id)} className="bg-red-500 text-white px-2 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600" title="Hapus">X</button>
-                                    <button onClick={() => handleLunasKasbon(k)} className="bg-neo-teal text-black px-3 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase hover:bg-teal-400">Lunas</button>
+                                    <button onClick={() => { setAddKasbonData({ id: k.id, nama: k.nama_pelanggan, nominal: '', keterangan_tambahan: '' }); setShowAddKasbonModal(true); }} className="bg-yellow-400 text-black px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-yellow-500" title="Tambah Hutang">+</button>
+                                    <button onClick={() => handleDeleteKasbon(k.id)} className="bg-red-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600" title="Hapus">X</button>
+                                    <button onClick={() => handleLunasKasbon(k)} className="bg-neo-teal text-black px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase hover:bg-teal-400">Lunas</button>
                                   </div>
                                 ) : (
                                   <div className="flex gap-1 justify-center flex-wrap">
                                     <span className="text-green-700 bg-green-100 px-2 py-1 font-black text-xs border border-green-700 -skew-x-6 inline-block">Selesai</span>
-                                    <button onClick={() => handleDeleteKasbon(k.id)} className="bg-red-500 text-white px-2 py-1 border-2 border-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600" title="Hapus">X</button>
+                                    <button onClick={() => handleDeleteKasbon(k.id)} className="bg-red-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600" title="Hapus">X</button>
                                   </div>
                                 )}
                               </td>
