@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { handleSupabaseError } from '../utils/errorHandler';
@@ -106,11 +105,6 @@ export default function Admin() {
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
   const [pesananBaru, setPesananBaru] = useState(null);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [notifications] = useState([
-    {id: 1, pesan: "Pesanan #123 masuk via WA", waktu: "Baru saja"}, 
-    {id: 2, pesan: "Stok Indomie menipis", waktu: "5 menit lalu"}
-  ]);
   const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
   // ========== FETCH ==========
@@ -587,83 +581,6 @@ export default function Admin() {
           )}
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden font-black text-xl hover:text-red-600 ml-auto">X</button>
         </div>
-
-        {/* Container Notifikasi di Sidebar */}
-        {!isSidebarMinimized && (
-          <div className="relative mx-4 my-4">
-            <button 
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              className="w-full flex items-center justify-center p-3 bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all active:bg-[#ffde59]"
-            >
-              <Bell size={24} strokeWidth={2.5} />
-              {/* Badge Merah (Opsional, jika ada notif) */}
-              {notifications.length > 0 && (
-                <span className="absolute top-1 right-1 flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-black"></span>
-                </span>
-              )}
-            </button>
-
-            {/* Panel Dropdown Notifikasi */}
-            {isNotifOpen && (
-              <div className="absolute left-0 mt-2 w-full md:w-64 bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-50 max-h-96 overflow-y-auto">
-                {/* Header Dropdown */}
-                <div className="flex justify-between items-center p-3 border-b-4 border-black bg-[#ffde59]">
-                  <h3 className="font-black uppercase">Notifikasi</h3>
-                  <button onClick={() => setIsNotifOpen(false)}><X size={20} /></button>
-                </div>
-                {/* List Notifikasi */}
-                <div className="p-2 flex flex-col gap-2">
-                  {notifications.length > 0 ? notifications.map(notif => (
-                    <div key={notif.id} className="p-2 border-2 border-black bg-gray-50 hover:bg-[#ffde59] cursor-pointer transition-colors">
-                      <p className="font-bold text-sm">{notif.pesan}</p>
-                      <p className="text-xs text-gray-600">{notif.waktu}</p>
-                    </div>
-                  )) : (
-                    <p className="text-center py-4 font-medium">Belum ada notifikasi.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {isSidebarMinimized && (
-          <div className="relative mx-2 my-4 flex justify-center">
-            <button 
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              className="flex items-center justify-center p-2 bg-white border-4 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all active:bg-[#ffde59]"
-            >
-              <Bell size={20} strokeWidth={2.5} />
-              {notifications.length > 0 && (
-                <span className="absolute top-0 right-0 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 border-2 border-black"></span>
-                </span>
-              )}
-            </button>
-
-            {isNotifOpen && (
-              <div className="absolute left-14 top-0 mt-0 w-64 bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] z-50 max-h-96 overflow-y-auto">
-                <div className="flex justify-between items-center p-3 border-b-4 border-black bg-[#ffde59]">
-                  <h3 className="font-black uppercase">Notifikasi</h3>
-                  <button onClick={() => setIsNotifOpen(false)}><X size={20} /></button>
-                </div>
-                <div className="p-2 flex flex-col gap-2">
-                  {notifications.length > 0 ? notifications.map(notif => (
-                    <div key={notif.id} className="p-2 border-2 border-black bg-gray-50 hover:bg-[#ffde59] cursor-pointer transition-colors">
-                      <p className="font-bold text-sm">{notif.pesan}</p>
-                      <p className="text-xs text-gray-600">{notif.waktu}</p>
-                    </div>
-                  )) : (
-                    <p className="text-center py-4 font-medium">Belum ada notifikasi.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         <nav className="flex-1 flex flex-col py-2">
           {navItems.map(item => (
