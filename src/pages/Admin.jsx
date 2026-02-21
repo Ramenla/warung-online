@@ -984,7 +984,7 @@ export default function Admin() {
                 <div><label className="block font-bold mb-1">Satuan</label><select name="satuan" value={formData.satuan} onChange={handleInputChange} className="w-full p-2 border-4 border-black font-bold"><option value="">-- Pilih --</option>{units.map(u => <option key={u.id} value={u.nama}>{u.nama}</option>)}</select></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block font-bold mb-1">Harga (Rp)</label><input name="harga" type="number" value={formData.harga} onChange={handleInputChange} className="w-full p-2 border-4 border-black font-bold" required /></div>
+                <div><label className="block font-bold mb-1">Harga (Rp)</label><input name="harga" type="text" inputMode="numeric" value={formData.harga ? new Intl.NumberFormat('id-ID').format(formData.harga) : ''} onChange={(e) => setFormData({ ...formData, harga: e.target.value.replace(/\D/g, '') })} className="w-full p-2 border-4 border-black font-bold" required /></div>
                 <div><label className="block font-bold mb-1">Stok</label><input name="stok" type="number" value={formData.stok} onChange={handleInputChange} className="w-full p-2 border-4 border-black font-bold" required /></div>
               </div>
               <div><label className="block font-bold mb-1">Foto (Opsional)</label><div className="border-4 border-dashed border-black p-4 bg-gray-50 text-center relative cursor-pointer"><input type="file" name="file" onChange={handleInputChange} className="absolute inset-0 opacity-0 cursor-pointer" /><span className="font-bold text-gray-500 text-sm">{formData.file ? formData.file.name : "Klik untuk upload"}</span></div></div>
