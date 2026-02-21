@@ -118,6 +118,7 @@ export default function Admin() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'transaksi' },
         (payload) => {
+          console.log("ADA PESANAN MASUK BRAY!", payload); // Cek apakah data masuk
           setPesananBaru(payload.new);
           notifSound.play().catch(e => console.log("Audio play di-block browser"));
           
@@ -128,7 +129,9 @@ export default function Admin() {
           }, 5000);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Status Koneksi Supabase Realtime:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
