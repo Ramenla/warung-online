@@ -814,7 +814,7 @@ export default function Admin() {
               
               {/* KIRI: Etalase */}
               <div className="col-span-2 flex-1 h-full overflow-y-auto p-2 md:p-4 pb-24 lg:pb-4 flex flex-col border-r-0 lg:border-r-4 border-black">
-                <div className="p-4 border-b-4 border-black bg-white shrink-0">
+                <div className="p-4 border-b-4 border-black shrink-0">
                   <input 
                     type="text" 
                     placeholder="Scan atau cari nama barang..." 
@@ -872,7 +872,7 @@ export default function Admin() {
               </div>
 
               {/* KANAN: Struk/Cart (HIDDEN ON MOBILE, ONLY ON DESKTOP) */}
-              <div className="hidden lg:flex flex-col col-span-1 h-full overflow-hidden border-4 border-black bg-white p-4 shrink-0 shadow-[6px_6px_0_0_black]">
+              <div className="hidden lg:flex flex-col col-span-1 h-full overflow-hidden  border-4 border-black bg-white p-4 shrink-0 shadow-[6px_6px_0_0_black]">
                 <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase shrink-0">Keranjang Kasir</h3>
                 
                 <div className="flex-1 overflow-y-auto p-4 mb-4 border-b-4 border-dashed border-gray-300">
