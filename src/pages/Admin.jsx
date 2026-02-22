@@ -3,6 +3,15 @@ import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { handleSupabaseError } from "../utils/errorHandler";
 import { Bell, X } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 // ========== CUSTOM CONFIRM MODAL ==========
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
@@ -176,6 +185,57 @@ export default function Admin() {
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // ========== CHART STATE ==========
+  const [filterWaktu, setFilterWaktu] = useState("bulan");
+  const [dataChart, setDataChart] = useState([]);
+
+  useEffect(() => {
+    const validOrders = orders.filter((o) => o.status === "Selesai");
+    let grouped = {};
+    const today = new Date();
+
+    if (filterWaktu === "minggu") {
+      const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        grouped[d.toLocaleDateString("id-ID")] = { name: days[d.getDay()], total: 0 };
+      }
+      validOrders.forEach((o) => {
+        const orderDate = new Date(o.created_at).toLocaleDateString("id-ID");
+        if (grouped[orderDate]) {
+          grouped[orderDate].total += o.total_harga || 0;
+        }
+      });
+      setDataChart(Object.values(grouped));
+    } else if (filterWaktu === "bulan") {
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+      for (let i = 1; i <= numDays; i++) {
+        grouped[i] = 0;
+      }
+      validOrders.forEach((o) => {
+        const oDate = new Date(o.created_at);
+        if (oDate.getMonth() === currentMonth && oDate.getFullYear() === currentYear) {
+          grouped[oDate.getDate()] += o.total_harga || 0;
+        }
+      });
+      setDataChart(Object.keys(grouped).map((key) => ({ name: key, total: grouped[key] })));
+    } else if (filterWaktu === "tahun") {
+      const currentYear = today.getFullYear();
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+      months.forEach((m) => (grouped[m] = 0));
+      validOrders.forEach((o) => {
+        const oDate = new Date(o.created_at);
+        if (oDate.getFullYear() === currentYear) {
+          grouped[months[oDate.getMonth()]] += o.total_harga || 0;
+        }
+      });
+      setDataChart(Object.keys(grouped).map((key) => ({ name: key, total: grouped[key] })));
+    }
+  }, [orders, filterWaktu]);
 
   // ========== FETCH ==========
   useEffect(() => {
@@ -1254,6 +1314,48 @@ export default function Admin() {
                   color="bg-neo-teal"
                   text="text-black"
                 />
+              </div>
+
+              <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-black text-xl uppercase">Trend Pemasukan</h2>
+                  <select
+                    value={filterWaktu}
+                    onChange={(e) => setFilterWaktu(e.target.value)}
+                    className="p-2 border-4 border-black bg-[#ffde59] font-bold cursor-pointer outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-sm md:text-base"
+                  >
+                    <option value="minggu">7 Hari Terakhir</option>
+                    <option value="bulan">Bulan Ini</option>
+                    <option value="tahun">Tahun Ini</option>
+                  </select>
+                </div>
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={dataChart}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1} vertical={false} />
+                      <XAxis dataKey="name" stroke="#000" tick={{fontWeight: 'bold'}} axisLine={{strokeWidth: 3}} />
+                      <YAxis
+                        stroke="#000"
+                        tick={{fontWeight: 'bold'}}
+                        axisLine={{strokeWidth: 3}}
+                        width={60}
+                        tickFormatter={(val) => `Rp${val/1000}k`}
+                      />
+                      <Tooltip 
+                        contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                        formatter={(value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="total"
+                        stroke="#000"
+                        strokeWidth={5}
+                        activeDot={{r: 8, fill: '#ffde59', stroke: '#000', strokeWidth: 3}}
+                        dot={{r: 4, fill: '#000'}}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
               <div className="bg-white border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
