@@ -18,7 +18,7 @@ const CartBottomBar = () => {
       .join("\n");
 
     // Rangkai pesan lengkap
-    const message = `Halo, saya mau pesan barang dari warung:\n\n${itemList}\n\n*Total Belanja: ${formatRupiah(totalPrice)}*\n\nMohon segera diproses ya. Terima kasih!`;
+    const message = `Haloo, saya mau pesan barang dari warung:\n\n${itemList}\n\n*Total Belanja: ${formatRupiah(totalPrice)}*\n\nMohon segera diproses ya. Terima kasih!`;
 
     // Encode dan buka WhatsApp
     const encodedMessage = encodeURIComponent(message);
