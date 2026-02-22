@@ -7,7 +7,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
   const [namaPembeli, setNamaPembeli] = useState('');
   const [catatan, setCatatan] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState('Ambil Sendiri');
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [metodePembayaran, setMetodePembayaran] = useState('Tunai');
   const [address, setAddress] = useState('');
   const [processing, setProcessing] = useState(false);
 
@@ -25,7 +25,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
         catatan: catatan || null,
         total_harga: totalPrice,
         status: 'Menunggu',
-        metode_pembayaran: paymentMethod,
+        metode_pembayaran: metodePembayaran,
         metode_pengiriman: deliveryMethod,
         alamat_pengiriman: deliveryMethod === 'Diantar' ? address : null
       }])
@@ -57,7 +57,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
     const ringkasanBarang = cart.map(item => `${item.name} x${item.quantity}`).join(', ');
 
-    if (paymentMethod === 'Kasbon') {
+    if (metodePembayaran === 'Kasbon') {
       const { error: kasbonError } = await supabase.from('kasbon').insert([{
         nama_pelanggan: namaPembeli,
         keterangan: `Pesanan Online: ${ringkasanBarang}`,
@@ -80,9 +80,9 @@ const CartSidebar = ({ isOpen, onClose }) => {
     }).join('\n');
 
     const deliveryInfo = deliveryMethod === 'Diantar' ? `Diantar ke: ${address}` : 'Ambil Sendiri di Warung';
-    const paymentInfo = paymentMethod === 'COD' ? 'Bayar Tunai (COD)' : 'QRIS / Non-Tunai';
+    const paymentInfoText = metodePembayaran === 'Tunai' ? 'Tunai / Bayar di Tempat' : 'Nontunai / QRIS';
 
-    const message = `Halo, saya *${namaPembeli}*.\n\nNo. Order: *${shortId}*\n\n${itemList}\n\n*Total: ${formatRupiah(totalPrice)}*\n\nPengiriman: ${deliveryInfo}\nPembayaran: ${paymentInfo}\n${catatan ? `Catatan: ${catatan}` : ''}\n\nMohon diproses. Terima kasih!`;
+    const message = `Halo, saya *${namaPembeli}*.\n\nNo. Order: *${shortId}*\n\n${itemList}\n\n*Total: ${formatRupiah(totalPrice)}*\n\nPengiriman: ${deliveryInfo}\n*Metode Pembayaran: ${paymentInfoText}*\n${catatan ? `Catatan: ${catatan}` : ''}\n\nMohon diproses. Terima kasih!`;
 
     // Clear cart and state first
     clearCart();
@@ -90,7 +90,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
     setCatatan('');
     setAddress('');
     setDeliveryMethod('Ambil Sendiri');
-    setPaymentMethod('COD');
+    setMetodePembayaran('Tunai');
     setProcessing(false);
     onClose();
 
@@ -162,19 +162,16 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
                   <div>
                     <label className="block font-black text-sm mb-2 uppercase">Pembayaran</label>
-                    <div className="flex gap-2 text-xs md:text-sm">
-                      {['COD', 'QRIS', 'Kasbon'].map(opt => (
-                        <button key={opt} type="button" onClick={() => setPaymentMethod(opt)}
-                          className={`flex-1 py-2 font-bold border-2 border-black transition-all
-                          ${paymentMethod === opt ? 'bg-black text-white shadow-none' : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none'}`}
-                        >{opt === 'COD' ? 'Tunai (COD)' : opt === 'Kasbon' ? 'Paylater (Nanti)' : 'QRIS'}</button>
-                      ))}
+                    <div className="flex flex-col gap-2">
+                       <button type="button" onClick={() => setMetodePembayaran('Tunai')}
+                          className={`w-full py-3 font-black text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] transition-all
+                          ${metodePembayaran === 'Tunai' ? 'bg-[#ffde59] shadow-[2px_2px_0_0_black] translate-y-1' : 'bg-white'}`}
+                        >Tunai / Bayar di Tempat</button>
+                       <button type="button" onClick={() => setMetodePembayaran('QRIS')}
+                          className={`w-full py-3 font-black text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] transition-all
+                          ${metodePembayaran === 'QRIS' ? 'bg-[#ffde59] shadow-[2px_2px_0_0_black] translate-y-1' : 'bg-white'}`}
+                        >Nontunai / QRIS</button>
                     </div>
-                    {paymentMethod === 'QRIS' && (
-                      <div className="bg-blue-100 border-2 border-black p-2 mt-2 text-xs font-bold">
-                        QRIS akan dikirim via WhatsApp setelah pesanan dikonfirmasi.
-                      </div>
-                    )}
                   </div>
                 </div>
               )}

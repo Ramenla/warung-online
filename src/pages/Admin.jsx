@@ -786,6 +786,79 @@ export default function Admin() {
     }
   };
 
+  const handlePosCheckoutQris = async () => {
+    if (posCart.length === 0) {
+      showAlert("Keranjang kosong!");
+      return;
+    }
+
+    setIsCheckoutLoading(true);
+    try {
+      // 1. Insert Transaksi
+      const { data: trxData, error: trxError } = await supabase
+        .from("transaksi")
+        .insert([
+          {
+            nama_pembeli: "Pelanggan Offline",
+            status: "Selesai",
+            metode_pembayaran: "QRIS",
+            total_harga: posTotal,
+            metode_pengiriman: "Ambil Sendiri",
+            catatan: "Transaksi Kasir POS",
+          },
+        ])
+        .select();
+      if (trxError) throw trxError;
+      const newTrxId = trxData[0].id;
+
+      // 2. Insert Detail Transaksi
+      const detailsPayload = posCart.map((item) => ({
+        transaksi_id: newTrxId,
+        produk_id: item.id,
+        nama_produk: item.nama,
+        jumlah: item.qty,
+        harga_satuan: item.harga,
+      }));
+      const { error: detailsError } = await supabase
+        .from("detail_transaksi")
+        .insert(detailsPayload);
+      if (detailsError) throw detailsError;
+
+      // 3. Insert Arus Kas
+      const { error: kasError } = await supabase.from("arus_kas").insert([
+        {
+          tipe: "Pemasukan",
+          keterangan: `Penjualan Offline (QRIS) #${String(newTrxId).substring(0, 8).toUpperCase()}`,
+          nominal: posTotal,
+        },
+      ]);
+      if (kasError) throw kasError;
+
+      // 4. Update Stok
+      for (const item of posCart) {
+        const product = products.find((p) => p.id === item.id);
+        if (product) {
+          await supabase
+            .from("produk")
+            .update({ stok: Math.max(0, (product.stok || 0) - item.qty) })
+            .eq("id", product.id);
+        }
+      }
+
+      showAlert("Transaksi Offline QRIS Berhasil Disimpan!");
+      setPosCart([]);
+      setUangTunai("");
+      setPosSearch("");
+      fetchAll();
+    } catch (error) {
+      console.error(error);
+      handleSupabaseError(error);
+      showAlert("Terjadi kesalahan saat memproses checkout: " + error.message);
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
+
   const handlePosKasbon = async (e) => {
     e.preventDefault();
     if (!posKasbonName.trim()) return;
@@ -1656,22 +1729,34 @@ export default function Admin() {
                     </div>
                   )}
 
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={handlePosCheckout}
-                      disabled={
-                        isCheckoutLoading ||
-                        posCart.length === 0 ||
-                        (uangTunai !== "" && kembalian < 0)
-                      }
-                      className="flex-1 bg-neo-teal text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
-                    >
-                      {isCheckoutLoading ? "Memproses..." : "BAYAR TUNAI"}
-                    </button>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handlePosCheckout}
+                        disabled={
+                          isCheckoutLoading ||
+                          posCart.length === 0 ||
+                          (uangTunai !== "" && kembalian < 0)
+                        }
+                        className="flex-1 bg-neo-teal text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
+                      >
+                        {isCheckoutLoading ? "Memproses..." : "BAYAR TUNAI"}
+                      </button>
+                      <button
+                        onClick={handlePosCheckoutQris}
+                        disabled={
+                          isCheckoutLoading ||
+                          posCart.length === 0
+                        }
+                        className="flex-1 bg-blue-400 text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
+                      >
+                        {isCheckoutLoading ? "Memproses..." : "QRIS / NONTUNAI"}
+                      </button>
+                    </div>
                     <button
                       onClick={() => setShowPosKasbonPrompt(true)}
                       disabled={isCheckoutLoading || posCart.length === 0}
-                      className="flex-1 bg-yellow-400 text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
+                      className="w-full bg-yellow-400 text-black py-4 font-black text-base md:text-lg border-4 border-black shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transition-all relative"
                     >
                       PAYLATER
                     </button>
@@ -1811,22 +1896,38 @@ export default function Admin() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-3 mt-2">
-                        <button
-                          onClick={async () => {
-                            await handlePosCheckout();
-                            if (posCart.length === 0)
-                              setIsMobileCartOpen(false); // Close if successful
-                          }}
-                          disabled={
-                            isCheckoutLoading ||
-                            posCart.length === 0 ||
-                            (uangTunai !== "" && kembalian < 0)
-                          }
-                          className="bg-neo-teal text-black py-3 font-black text-sm border-4 border-black shadow-[4px_4px_0_0_black] active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:grayscale transition-all"
-                        >
-                          {isCheckoutLoading ? "PROSES..." : "TUNAI"}
-                        </button>
+                      <div className="flex flex-col gap-3 mt-2">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              await handlePosCheckout();
+                              if (posCart.length === 0)
+                                setIsMobileCartOpen(false); // Close if successful
+                            }}
+                            disabled={
+                              isCheckoutLoading ||
+                              posCart.length === 0 ||
+                              (uangTunai !== "" && kembalian < 0)
+                            }
+                            className="flex-1 bg-neo-teal text-black py-3 font-black text-sm border-4 border-black shadow-[4px_4px_0_0_black] active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:grayscale transition-all"
+                          >
+                            {isCheckoutLoading ? "PROSES..." : "TUNAI"}
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await handlePosCheckoutQris();
+                              if (posCart.length === 0)
+                                setIsMobileCartOpen(false); // Close if successful
+                            }}
+                            disabled={
+                              isCheckoutLoading ||
+                              posCart.length === 0
+                            }
+                            className="flex-1 bg-blue-400 text-black py-3 font-black text-sm border-4 border-black shadow-[4px_4px_0_0_black] active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:grayscale transition-all"
+                          >
+                            {isCheckoutLoading ? "PROSES..." : "QRIS"}
+                          </button>
+                        </div>
                         <button
                           onClick={() => {
                             setIsMobileCartOpen(false);
