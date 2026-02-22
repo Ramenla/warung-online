@@ -174,13 +174,26 @@ export default function Admin() {
     "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
   );
   const [isFabOpen, setIsFabOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // ========== FETCH ==========
   useEffect(() => {
     fetchAll();
 
+    // Fetch data awal (Riwayat Notifikasi)
+    const fetchInitialNotifs = async () => {
+      const { data, error } = await supabase
+        .from("transaksi")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (data && !error) setNotifications(data);
+    };
+    fetchInitialNotifs();
+
     // Setup Realtime Listener for new orders
-    const channel = supabase
+    const channelPesanan = supabase
       .channel("realtime-pesanan")
       .on(
         "postgres_changes",
@@ -203,8 +216,24 @@ export default function Admin() {
         console.log("Status Koneksi Supabase Realtime:", status);
       });
 
+    // Listener Realtime untuk notifikasi baru list panel
+    const channelNotif = supabase
+      .channel("realtime-notif")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "transaksi" },
+        (payload) => {
+          // Tambahkan data baru ke urutan paling atas array
+          setNotifications((prev) => [payload.new, ...prev]);
+          // Tambah indikator unread
+          setUnreadCount((prev) => prev + 1);
+        },
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channelPesanan);
+      supabase.removeChannel(channelNotif);
     };
   }, []);
   const fetchAll = async () => {
@@ -2720,34 +2749,56 @@ export default function Admin() {
 
           {/* Content/List Notifikasi (Area Scrollable) */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-            {/* --- Contoh Item Notifikasi Dummy --- */}
-            <div className="p-3 border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              <p className="font-bold">Pesanan #INV-001 Masuk!</p>
-              <p className="text-sm text-gray-600">Via WhatsApp - Rp 15.000</p>
-              <p className="text-xs text-gray-500 mt-2 text-right">Baru saja</p>
-            </div>
-            <div className="p-3 border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              <p className="font-bold">Stok "Gula Pasir" Menipis</p>
-              <p className="text-sm text-gray-600">Sisa 2 kg di etalase.</p>
-            </div>
-            {/* --- Hapus dummy ini nanti jika data real-time masuk --- */}
+            {notifications.length > 0 ? (
+              notifications.map((notif, index) => (
+                <div
+                  key={notif.id || index}
+                  className="p-3 border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffde59] transition-colors cursor-pointer"
+                >
+                  <p className="font-bold">Pesanan Masuk!</p>
+                  <p className="text-sm text-gray-800 font-medium">
+                    Metode: {notif.metode_pembayaran || "Tunai/WA"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Total: Rp {notif.total_harga?.toLocaleString("id-ID") || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2 text-right">
+                    {new Date(notif.created_at).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-center py-4 font-medium border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                Belum ada notifikasi.
+              </p>
+            )}
           </div>
         </div>
       )}
 
       {/* --- TOMBOL FLOATING (FAB) --- */}
       <button
-        onClick={() => setIsFabOpen(!isFabOpen)}
+        onClick={() => {
+          setIsFabOpen(!isFabOpen);
+          if (!isFabOpen) setUnreadCount(0); // Reset badge saat dibuka
+        }}
         className={`fixed top-3 right-4 md:top-auto md:bottom-6 md:right-6 z-[100] p-4 bg-white border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:bg-[#ffde59] ${isFabOpen ? "bg-[#ffde59] translate-x-[2px] translate-y-[2px] shadow-none" : ""}`}
         aria-label="Buka Notifikasi"
       >
         <div className="relative">
           <Bell size={28} strokeWidth={2.5} />
           {/* Badge Merah Berdenyut (Indikator ada notif baru) */}
-          <span className="absolute -top-1 -right-1 flex h-5 w-5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-5 w-5 bg-red-600 border-2 border-white"></span>
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-6 w-6 bg-red-600 border-2 border-black items-center justify-center text-white text-xs font-bold">
+                {unreadCount}
+              </span>
+            </span>
+          )}
         </div>
       </button>
     </div>
