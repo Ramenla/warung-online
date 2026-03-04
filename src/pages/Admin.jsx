@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { handleSupabaseError } from "../utils/errorHandler";
@@ -1034,19 +1034,40 @@ export default function Admin() {
     (o) => o.status === "Batal",
   ).length;
 
-  // Pie chart data for arus kas
-  const pieData = [
-    { name: "Pemasukan", value: totalPemasukan },
-    { name: "Pengeluaran", value: totalPengeluaran },
-  ];
-  const PIE_COLORS = ["#22c55e", "#ef4444"];
+  // Pie chart data for arus kas (memoized)
+  const dataPieChartArusKas = useMemo(() => {
+    let agregatPemasukan = 0;
+    let agregatPengeluaran = 0;
 
-  // Bar chart data for order distribution
-  const orderDistData = [
-    { name: "Selesai", jumlah: completedOrders, fill: "#22c55e" },
-    { name: "Pending", jumlah: pendingOrders, fill: "#facc15" },
-    { name: "Batal", jumlah: cancelledOrders, fill: "#ef4444" },
-  ];
+    filteredArusKas.forEach((item) => {
+      if (item.tipe === 'Pemasukan') agregatPemasukan += Number(item.nominal);
+      else if (item.tipe === 'Pengeluaran') agregatPengeluaran += Number(item.nominal);
+    });
+
+    return [
+      { name: 'Pemasukan', value: agregatPemasukan, fill: '#10b981' },
+      { name: 'Pengeluaran', value: agregatPengeluaran, fill: '#ef4444' },
+    ];
+  }, [filteredArusKas]);
+
+  // Bar chart data for order distribution (memoized)
+  const dataBarChartDistribusi = useMemo(() => {
+    let kuantitasSelesai = 0;
+    let kuantitasPending = 0;
+    let kuantitasBatal = 0;
+
+    filteredTransaksi.forEach((transaksi) => {
+      if (transaksi.status === 'Selesai') kuantitasSelesai++;
+      else if (transaksi.status === 'Pending' || transaksi.status === 'Menunggu Pembayaran') kuantitasPending++;
+      else if (transaksi.status === 'Dibatalkan' || transaksi.status === 'Batal') kuantitasBatal++;
+    });
+
+    return [
+      { name: 'Selesai', count: kuantitasSelesai, fill: '#10b981' },
+      { name: 'Pending', count: kuantitasPending, fill: '#f59e0b' },
+      { name: 'Batal', count: kuantitasBatal, fill: '#ef4444' },
+    ];
+  }, [filteredTransaksi]);
 
   const lowStockProducts = products
     .filter((p) => (p.stok || 0) < 5)
@@ -1395,7 +1416,7 @@ export default function Admin() {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={pieData}
+                          data={dataPieChartArusKas}
                           cx="50%"
                           cy="50%"
                           innerRadius={50}
@@ -1406,8 +1427,8 @@ export default function Admin() {
                           strokeWidth={3}
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         >
-                          {pieData.map((_, idx) => (
-                            <Cell key={`cell-${idx}`} fill={PIE_COLORS[idx]} />
+                          {dataPieChartArusKas.map((entry, idx) => (
+                            <Cell key={`cell-${idx}`} fill={entry.fill} />
                           ))}
                         </Pie>
                         <Tooltip
@@ -1441,7 +1462,7 @@ export default function Admin() {
                   <h3 className="font-black text-lg mb-2 uppercase text-left">Distribusi Order</h3>
                   <div className="h-56 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={orderDistData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                      <BarChart data={dataBarChartDistribusi} layout="vertical" margin={{ left: 10, right: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1} horizontal={false} />
                         <XAxis type="number" stroke="#000" tick={{fontWeight: 'bold', fontSize: 12}} axisLine={{strokeWidth: 3}} allowDecimals={false} />
                         <YAxis type="category" dataKey="name" stroke="#000" tick={{fontWeight: 'bold', fontSize: 12}} axisLine={{strokeWidth: 3}} width={60} />
@@ -1449,8 +1470,8 @@ export default function Admin() {
                           contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
                           formatter={(value) => [`${value} order`]}
                         />
-                        <Bar dataKey="jumlah" stroke="#000" strokeWidth={2} barSize={28}>
-                          {orderDistData.map((entry, idx) => (
+                        <Bar dataKey="count" stroke="#000" strokeWidth={2} barSize={28}>
+                          {dataBarChartDistribusi.map((entry, idx) => (
                             <Cell key={`bar-${idx}`} fill={entry.fill} />
                           ))}
                         </Bar>
@@ -1466,7 +1487,7 @@ export default function Admin() {
 
                 {/* Stok Menipis */}
                 <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                  <h3 className="font-black text-lg mb-3 uppercase text-left">
+                  <h3 className="font-black text-lg mb-3  uppercase text-left">
                     Stok Menipis
                   </h3>
                   {lowStockProducts.length === 0 ? (
