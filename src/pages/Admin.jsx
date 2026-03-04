@@ -11,6 +11,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  Legend,
 } from "recharts";
 
 // ========== CUSTOM CONFIRM MODAL ==========
@@ -151,10 +157,8 @@ export default function Admin() {
   });
 
   // ========== FILTER STATE ==========
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
-  const [filterMonth, setFilterMonth] = useState(currentMonth);
-  const [filterYear, setFilterYear] = useState(currentYear);
+  const [filterMonth, setFilterMonth] = useState("semua");
+  const [filterYear, setFilterYear] = useState("semua");
 
   // ========== POS STATE ==========
   const [posCart, setPosCart] = useState([]);
@@ -997,18 +1001,18 @@ export default function Admin() {
   // ========== COMPUTED & FILTERING ==========
   // Filter for dashboard
   const filteredArusKas = arusKas.filter((a) => {
+    if (filterMonth === "semua" && filterYear === "semua") return true;
     const d = new Date(a.created_at);
-    return (
-      d.getMonth() + 1 === parseInt(filterMonth) &&
-      d.getFullYear() === parseInt(filterYear)
-    );
+    const matchMonth = filterMonth === "semua" || d.getMonth() + 1 === parseInt(filterMonth);
+    const matchYear = filterYear === "semua" || d.getFullYear() === parseInt(filterYear);
+    return matchMonth && matchYear;
   });
   const filteredTransaksi = orders.filter((o) => {
+    if (filterMonth === "semua" && filterYear === "semua") return true;
     const d = new Date(o.created_at);
-    return (
-      d.getMonth() + 1 === parseInt(filterMonth) &&
-      d.getFullYear() === parseInt(filterYear)
-    );
+    const matchMonth = filterMonth === "semua" || d.getMonth() + 1 === parseInt(filterMonth);
+    const matchYear = filterYear === "semua" || d.getFullYear() === parseInt(filterYear);
+    return matchMonth && matchYear;
   });
 
   const totalPemasukan = filteredArusKas
@@ -1019,10 +1023,30 @@ export default function Admin() {
     .reduce((s, a) => s + a.nominal, 0);
   const saldoBersih = totalPemasukan - totalPengeluaran;
 
-  // Also count total completed orders in selected month
+  // Also count total completed orders in selected period
   const completedOrders = filteredTransaksi.filter(
     (o) => o.status === "Selesai",
   ).length;
+  const pendingOrders = filteredTransaksi.filter(
+    (o) => o.status === "Pending",
+  ).length;
+  const cancelledOrders = filteredTransaksi.filter(
+    (o) => o.status === "Batal",
+  ).length;
+
+  // Pie chart data for arus kas
+  const pieData = [
+    { name: "Pemasukan", value: totalPemasukan },
+    { name: "Pengeluaran", value: totalPengeluaran },
+  ];
+  const PIE_COLORS = ["#22c55e", "#ef4444"];
+
+  // Bar chart data for order distribution
+  const orderDistData = [
+    { name: "Selesai", jumlah: completedOrders, fill: "#22c55e" },
+    { name: "Pending", jumlah: pendingOrders, fill: "#facc15" },
+    { name: "Batal", jumlah: cancelledOrders, fill: "#ef4444" },
+  ];
 
   const lowStockProducts = products
     .filter((p) => (p.stok || 0) < 5)
@@ -1265,6 +1289,7 @@ export default function Admin() {
                   onChange={(e) => setFilterMonth(e.target.value)}
                   className="px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm"
                 >
+                  <option value="semua">Semua Bulan</option>
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i + 1} value={i + 1}>
                       {new Date(2000, i).toLocaleString("id-ID", {
@@ -1278,6 +1303,7 @@ export default function Admin() {
                   onChange={(e) => setFilterYear(e.target.value)}
                   className="px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm"
                 >
+                  <option value="semua">Semua Tahun</option>
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
                       {y}
@@ -1286,6 +1312,7 @@ export default function Admin() {
                 </select>
               </div>
 
+              {/* Stat Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard
                   title="Total Pendapatan"
@@ -1316,122 +1343,169 @@ export default function Admin() {
                 />
               </div>
 
-              <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="font-black text-xl uppercase">Trend Pemasukan</h2>
-                  <select
-                    value={filterWaktu}
-                    onChange={(e) => setFilterWaktu(e.target.value)}
-                    className="p-2 border-4 border-black bg-[#ffde59] font-bold cursor-pointer outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-sm md:text-base"
-                  >
-                    <option value="minggu">7 Hari Terakhir</option>
-                    <option value="bulan">Bulan Ini</option>
-                    <option value="tahun">Tahun Ini</option>
-                  </select>
+              {/* Row 1: Trend + Arus Kas Pie */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Trend Pemasukan Chart */}
+                <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="font-black text-lg uppercase">Trend Pemasukan</h2>
+                    <select
+                      value={filterWaktu}
+                      onChange={(e) => setFilterWaktu(e.target.value)}
+                      className="p-1.5 border-4 border-black bg-[#ffde59] font-bold cursor-pointer outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-xs md:text-sm"
+                    >
+                      <option value="minggu">7 Hari Terakhir</option>
+                      <option value="bulan">Bulan Ini</option>
+                      <option value="tahun">Tahun Ini</option>
+                    </select>
+                  </div>
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={dataChart}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1} vertical={false} />
+                        <XAxis dataKey="name" stroke="#000" tick={{fontWeight: 'bold', fontSize: 11}} axisLine={{strokeWidth: 3}} />
+                        <YAxis
+                          stroke="#000"
+                          tick={{fontWeight: 'bold', fontSize: 11}}
+                          axisLine={{strokeWidth: 3}}
+                          width={55}
+                          tickFormatter={(val) => `Rp${val/1000}k`}
+                        />
+                        <Tooltip 
+                          contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                          formatter={(value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="total"
+                          stroke="#000"
+                          strokeWidth={4}
+                          activeDot={{r: 7, fill: '#ffde59', stroke: '#000', strokeWidth: 3}}
+                          dot={{r: 3, fill: '#000'}}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-                <div className="h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={dataChart}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1} vertical={false} />
-                      <XAxis dataKey="name" stroke="#000" tick={{fontWeight: 'bold'}} axisLine={{strokeWidth: 3}} />
-                      <YAxis
-                        stroke="#000"
-                        tick={{fontWeight: 'bold'}}
-                        axisLine={{strokeWidth: 3}}
-                        width={60}
-                        tickFormatter={(val) => `Rp${val/1000}k`}
-                      />
-                      <Tooltip 
-                        contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
-                        formatter={(value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="total"
-                        stroke="#000"
-                        strokeWidth={5}
-                        activeDot={{r: 8, fill: '#ffde59', stroke: '#000', strokeWidth: 3}}
-                        dot={{r: 4, fill: '#000'}}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+
+                {/* Arus Kas Pie Chart */}
+                <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <h3 className="font-black text-lg mb-2 uppercase text-left">Komposisi Arus Kas</h3>
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          paddingAngle={4}
+                          dataKey="value"
+                          stroke="#000"
+                          strokeWidth={3}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {pieData.map((_, idx) => (
+                            <Cell key={`cell-${idx}`} fill={PIE_COLORS[idx]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                          formatter={(value) => formatRupiah(value)}
+                        />
+                        <Legend
+                          wrapperStyle={{fontWeight: 'bold', fontSize: 13}}
+                          formatter={(value) => <span style={{color: '#000', fontWeight: 800}}>{value}</span>}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex justify-around mt-2 text-center">
+                    <div>
+                      <p className="font-black text-green-600 text-sm md:text-base">{formatRupiah(totalPemasukan)}</p>
+                      <p className="text-xs font-bold text-gray-500">Pemasukan</p>
+                    </div>
+                    <div>
+                      <p className="font-black text-red-500 text-sm md:text-base">{formatRupiah(totalPengeluaran)}</p>
+                      <p className="text-xs font-bold text-gray-500">Pengeluaran</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <h3 className="font-black text-xl mb-6 uppercase text-left">Arus Kas</h3>
-                <div className="flex items-end justify-center gap-8 h-48">
-                  <div className="flex flex-col items-center gap-2">
-                    <div
-                      className="bg-green-500 border-4 border-black w-20 md:w-28 transition-all duration-700"
-                      style={{
-                        height: `${Math.max((totalPemasukan / maxFinancial) * 160, 20)}px`,
-                      }}
-                    ></div>
-                    <span className="font-bold text-xs text-center">
-                      Pemasukan
-                    </span>
-                    <span className="font-black text-sm text-green-700">
-                      {formatRupiah(totalPemasukan)}
-                    </span>
+              {/* Row 2: Order Distribution + Stok Menipis */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Distribusi Order */}
+                <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <h3 className="font-black text-lg mb-2 uppercase text-left">Distribusi Order</h3>
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={orderDistData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1} horizontal={false} />
+                        <XAxis type="number" stroke="#000" tick={{fontWeight: 'bold', fontSize: 12}} axisLine={{strokeWidth: 3}} allowDecimals={false} />
+                        <YAxis type="category" dataKey="name" stroke="#000" tick={{fontWeight: 'bold', fontSize: 12}} axisLine={{strokeWidth: 3}} width={60} />
+                        <Tooltip
+                          contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                          formatter={(value) => [`${value} order`]}
+                        />
+                        <Bar dataKey="jumlah" stroke="#000" strokeWidth={2} barSize={28}>
+                          {orderDistData.map((entry, idx) => (
+                            <Cell key={`bar-${idx}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="flex flex-col items-center gap-2">
-                    <div
-                      className="bg-red-500 border-4 border-black w-20 md:w-28 transition-all duration-700"
-                      style={{
-                        height: `${Math.max((totalPengeluaran / maxFinancial) * 160, 20)}px`,
-                      }}
-                    ></div>
-                    <span className="font-bold text-xs text-center">
-                      Pengeluaran
-                    </span>
-                    <span className="font-black text-sm text-red-600">
-                      {formatRupiah(totalPengeluaran)}
-                    </span>
+                  <div className="flex justify-around mt-2 text-center">
+                    <div><span className="font-black text-green-600 text-lg">{completedOrders}</span><p className="text-xs font-bold text-gray-500">Selesai</p></div>
+                    <div><span className="font-black text-yellow-500 text-lg">{pendingOrders}</span><p className="text-xs font-bold text-gray-500">Pending</p></div>
+                    <div><span className="font-black text-red-500 text-lg">{cancelledOrders}</span><p className="text-xs font-bold text-gray-500">Batal</p></div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-white border-4 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <h3 className="font-black text-xl mb-4 uppercase text-left">
-                  Stok Menipis
-                </h3>
-                {lowStockProducts.length === 0 ? (
-                  <p className="text-gray-500 font-bold text-center py-4">
-                    Semua stok aman.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {lowStockProducts.map((p, i) => {
-                      const barColors = [
-                        "bg-red-500",
-                        "bg-red-400",
-                        "bg-orange-400",
-                        "bg-yellow-400",
-                        "bg-yellow-300",
-                      ];
-                      return (
-                        <div key={p.id} className="flex items-center gap-3">
-                          <span className="font-bold text-sm w-28 md:w-40 text-right truncate">
-                            {p.nama}
-                          </span>
-                          <div className="flex-1 bg-gray-100 border-2 border-black h-8 relative">
-                            <div
-                              className={`${barColors[i]} h-full border-r-2 border-black flex items-center justify-end pr-2 transition-all`}
-                              style={{
-                                width: `${Math.max(((p.stok || 0) / 10) * 100, 15)}%`,
-                              }}
-                            >
-                              <span className="font-black text-xs text-white drop-shadow-[1px_1px_0_black]">
-                                {p.stok || 0}
-                              </span>
+                {/* Stok Menipis */}
+                <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <h3 className="font-black text-lg mb-3 uppercase text-left">
+                    Stok Menipis
+                  </h3>
+                  {lowStockProducts.length === 0 ? (
+                    <p className="text-gray-500 font-bold text-center py-4">
+                      Semua stok aman. 👍
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {lowStockProducts.map((p, i) => {
+                        const barColors = [
+                          "bg-red-500",
+                          "bg-red-400",
+                          "bg-orange-400",
+                          "bg-yellow-400",
+                          "bg-yellow-300",
+                        ];
+                        return (
+                          <div key={p.id} className="flex items-center gap-2">
+                            <span className="font-bold text-xs w-24 md:w-32 text-right truncate">
+                              {p.nama}
+                            </span>
+                            <div className="flex-1 bg-gray-100 border-2 border-black h-7 relative">
+                              <div
+                                className={`${barColors[i]} h-full border-r-2 border-black flex items-center justify-end pr-2 transition-all`}
+                                style={{
+                                  width: `${Math.max(((p.stok || 0) / 10) * 100, 15)}%`,
+                                }}
+                              >
+                                <span className="font-black text-xs text-white drop-shadow-[1px_1px_0_black]">
+                                  {p.stok || 0}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
