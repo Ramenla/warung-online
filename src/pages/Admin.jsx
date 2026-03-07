@@ -144,6 +144,8 @@ export default function Admin() {
     keterangan: "",
     nominal: "",
   });
+  const [nominalInput, setNominalInput] = useState("");
+  const [nominalRaw, setNominalRaw] = useState(0);
   const [selectedProductIds, setSelectedProductIds] = useState([]);
 
   // ========== KASBON STATE ==========
@@ -155,6 +157,11 @@ export default function Admin() {
     nominal: "",
     keterangan_tambahan: "",
   });
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [kasbonDetails, setKasbonDetails] = useState([]);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [searchKatalog, setSearchKatalog] = useState("");
+  const [kategoriKatalog, setKategoriKatalog] = useState("Semua");
 
   // ========== FILTER STATE ==========
   const [filterMonth, setFilterMonth] = useState("semua");
@@ -168,6 +175,8 @@ export default function Admin() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [showPosKasbonPrompt, setShowPosKasbonPrompt] = useState(false);
   const [posKasbonName, setPosKasbonName] = useState("");
+  const [namaPembeli, setNamaPembeli] = useState("");
+  const [isDiantar, setIsDiantar] = useState(false);
 
   // ========== FETCH ==========
   // ========== STOREFRONT SECTIONS STATE ==========
@@ -593,20 +602,33 @@ export default function Admin() {
   };
 
   // ========== EXPENSE ==========
+  const handleNominalChange = (e) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    if (rawValue) {
+      setNominalInput(new Intl.NumberFormat('id-ID').format(rawValue));
+      setNominalRaw(Number(rawValue));
+    } else {
+      setNominalInput('');
+      setNominalRaw(0);
+    }
+  };
+
   const handleAddExpense = async (e) => {
     e.preventDefault();
-    if (!expenseForm.keterangan || !expenseForm.nominal) return;
+    if (!expenseForm.keterangan || !nominalRaw) return;
     await supabase
       .from("arus_kas")
       .insert([
         {
           tipe: "Pengeluaran",
           keterangan: expenseForm.keterangan,
-          nominal: parseInt(expenseForm.nominal),
+          nominal: nominalRaw,
         },
       ]);
     setShowExpenseModal(false);
     setExpenseForm({ keterangan: "", nominal: "" });
+    setNominalInput("");
+    setNominalRaw(0);
     fetchArusKas();
   };
 
@@ -790,12 +812,13 @@ export default function Admin() {
         .from("transaksi")
         .insert([
           {
-            nama_pembeli: "Pelanggan Offline",
+            nama_pembeli: namaPembeli || "Pelanggan Offline",
             status: "Selesai",
             metode_pembayaran: "Tunai",
             total_harga: posTotal,
-            metode_pengiriman: "Ambil Sendiri",
+            metode_pengiriman: isDiantar ? "Diantar" : "Ambil Sendiri",
             catatan: "Transaksi Kasir POS",
+            is_diantar: isDiantar,
           },
         ])
         .select();
@@ -840,6 +863,8 @@ export default function Admin() {
       setPosCart([]);
       setUangTunai("");
       setPosSearch("");
+      setNamaPembeli("");
+      setIsDiantar(false);
       fetchAll();
     } catch (error) {
       console.error(error);
@@ -863,12 +888,13 @@ export default function Admin() {
         .from("transaksi")
         .insert([
           {
-            nama_pembeli: "Pelanggan Offline",
+            nama_pembeli: namaPembeli || "Pelanggan Offline",
             status: "Selesai",
             metode_pembayaran: "QRIS",
             total_harga: posTotal,
-            metode_pengiriman: "Ambil Sendiri",
+            metode_pengiriman: isDiantar ? "Diantar" : "Ambil Sendiri",
             catatan: "Transaksi Kasir POS",
+            is_diantar: isDiantar,
           },
         ])
         .select();
@@ -913,6 +939,8 @@ export default function Admin() {
       setPosCart([]);
       setUangTunai("");
       setPosSearch("");
+      setNamaPembeli("");
+      setIsDiantar(false);
       fetchAll();
     } catch (error) {
       console.error(error);
@@ -1068,6 +1096,68 @@ export default function Admin() {
       { name: 'Batal', count: kuantitasBatal, fill: '#ef4444' },
     ];
   }, [filteredTransaksi]);
+
+  // ========== FILTERED KATALOG PRODUK ==========
+  const filteredKatalogProduk = useMemo(() => {
+    return products.filter((produk) => {
+      const matchKategori = kategoriKatalog === "Semua" || produk.kategori === kategoriKatalog;
+      const matchSearch = produk.nama.toLowerCase().includes(searchKatalog.toLowerCase());
+      return matchKategori && matchSearch;
+    });
+  }, [products, searchKatalog, kategoriKatalog]);
+
+  // Buka detail paylater: fetch detail_transaksi berdasarkan transaksi_id
+  const handleOpenKasbonDetail = async (k) => {
+    setSelectedCustomer(k);
+    setKasbonDetails([]);
+    if (k.transaksi_id) {
+      const { data } = await supabase
+        .from("detail_transaksi")
+        .select("*")
+        .eq("transaksi_id", k.transaksi_id);
+      setKasbonDetails(data || []);
+    }
+  };
+
+  // Tambah produk ke paylater: insert detail_transaksi & update nominal kasbon
+  const handleTambahProdukKePaylater = async (produk) => {
+    if (!selectedCustomer?.transaksi_id) {
+      showAlert("Paylater ini tidak memiliki transaksi terhubung. Tidak bisa menambah barang.");
+      return;
+    }
+    const payload = {
+      transaksi_id: selectedCustomer.transaksi_id,
+      produk_id: produk.id,
+      nama_produk: produk.nama,
+      jumlah: 1,
+      harga_satuan: produk.harga,
+    };
+    const { data, error } = await supabase
+      .from("detail_transaksi")
+      .insert([payload])
+      .select();
+    if (error) {
+      showAlert("Gagal menambah barang: " + error.message);
+      return;
+    }
+    // Update nominal kasbon di DB
+    const newNominal = (selectedCustomer.nominal || 0) + produk.harga;
+    await supabase
+      .from("kasbon")
+      .update({ nominal: newNominal })
+      .eq("id", selectedCustomer.id);
+
+    // Update state lokal secara instan (tanpa refresh)
+    const newDetail = data?.[0] || { ...payload, id: Date.now() };
+    setKasbonDetails((prev) => [...prev, newDetail]);
+    setSelectedCustomer((prev) => ({ ...prev, nominal: newNominal }));
+    setKasbon((prev) =>
+      prev.map((k) => k.id === selectedCustomer.id ? { ...k, nominal: newNominal } : k)
+    );
+    setIsProductModalOpen(false);
+    setSearchKatalog("");
+    setKategoriKatalog("Semua");
+  };
 
   const lowStockProducts = products
     .filter((p) => (p.stok || 0) < 5)
@@ -1927,6 +2017,23 @@ export default function Admin() {
                   )}
 
                   <div className="flex flex-col gap-2 mt-4">
+                    {/* Nama Pembeli & Toggle Diantar */}
+                    <input
+                      type="text"
+                      value={namaPembeli}
+                      onChange={(e) => setNamaPembeli(e.target.value)}
+                      placeholder="Nama Pembeli (Opsional)"
+                      className="w-full p-2 border-4 border-black font-bold focus:outline-none text-sm"
+                    />
+                    <label className="flex items-center gap-3 cursor-pointer font-bold text-sm border-4 border-black p-2 bg-gray-50 hover:bg-yellow-50 transition-colors select-none">
+                      <input
+                        type="checkbox"
+                        checked={isDiantar}
+                        onChange={(e) => setIsDiantar(e.target.checked)}
+                        className="w-5 h-5 accent-black"
+                      />
+                      Pesanan Diantar
+                    </label>
                     <div className="flex gap-2">
                       <button
                         onClick={handlePosCheckout}
@@ -2094,6 +2201,23 @@ export default function Admin() {
                       )}
 
                       <div className="flex flex-col gap-3 mt-2">
+                        {/* Nama Pembeli & Toggle Diantar */}
+                        <input
+                          type="text"
+                          value={namaPembeli}
+                          onChange={(e) => setNamaPembeli(e.target.value)}
+                          placeholder="Nama Pembeli (Opsional)"
+                          className="w-full p-3 border-4 border-black font-bold focus:outline-none text-sm"
+                        />
+                        <label className="flex items-center gap-3 cursor-pointer font-bold text-sm border-4 border-black p-3 bg-gray-50 hover:bg-yellow-50 transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={isDiantar}
+                            onChange={(e) => setIsDiantar(e.target.checked)}
+                            className="w-5 h-5 accent-black"
+                          />
+                          Pesanan Diantar
+                        </label>
                         <div className="flex gap-2">
                           <button
                             onClick={async () => {
@@ -2636,7 +2760,12 @@ export default function Admin() {
                                 {dateFormatted}
                               </td>
                               <td className="p-3 text-indigo-900 whitespace-nowrap">
-                                {k.nama_pelanggan}
+                                <button
+                                  onClick={() => handleOpenKasbonDetail(k)}
+                                  className="font-black underline underline-offset-2 hover:text-indigo-600 transition-colors text-left"
+                                >
+                                  {k.nama_pelanggan}
+                                </button>
                               </td>
                               <td
                                 className="p-3 text-gray-600 truncate max-w-[250px] whitespace-nowrap"
@@ -2658,19 +2787,10 @@ export default function Admin() {
                                 {k.status === "Belum Lunas" ? (
                                   <div className="flex gap-1 justify-center flex-wrap">
                                     <button
-                                      onClick={() => {
-                                        setAddKasbonData({
-                                          id: k.id,
-                                          nama: k.nama_pelanggan,
-                                          nominal: "",
-                                          keterangan_tambahan: "",
-                                        });
-                                        setShowAddKasbonModal(true);
-                                      }}
-                                      className="bg-yellow-400 text-black px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-yellow-500"
-                                      title="Tambah Hutang"
+                                      onClick={() => handleOpenKasbonDetail(k)}
+                                      className="bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
                                     >
-                                      +
+                                      Detail
                                     </button>
                                     <button
                                       onClick={() => handleDeleteKasbon(k.id)}
@@ -2688,6 +2808,12 @@ export default function Admin() {
                                   </div>
                                 ) : (
                                   <div className="flex gap-1 justify-center flex-wrap">
+                                    <button
+                                      onClick={() => handleOpenKasbonDetail(k)}
+                                      className="bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
+                                    >
+                                      Detail
+                                    </button>
                                     <span className="text-green-700 bg-green-100 px-2 py-1 font-black text-xs border border-green-700 -skew-x-6 inline-block">
                                       Selesai
                                     </span>
@@ -2713,6 +2839,176 @@ export default function Admin() {
           )}
         </div>
       </main>
+
+      {/* ====== MODAL DETAIL PAYLATER ====== */}
+      {selectedCustomer && (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-3 backdrop-blur-sm">
+          <div className="bg-white w-[95%] max-w-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b-4 border-black bg-[#ffde59] shrink-0">
+              <div>
+                <h2 className="font-black text-xl uppercase text-left">
+                  Detail Paylater
+                </h2>
+                <p className="font-bold text-sm mt-0.5">
+                  {selectedCustomer.nama_pelanggan} —{" "}
+                  <span className={`font-black ${selectedCustomer.status === "Lunas" ? "text-green-700" : "text-red-600"}`}>
+                    {selectedCustomer.status}
+                  </span>
+                </p>
+              </div>
+              <button
+                onClick={() => { setSelectedCustomer(null); setKasbonDetails([]); }}
+                className="text-2xl font-black hover:text-red-600 border-2 border-black bg-white w-9 h-9 flex items-center justify-center shadow-[2px_2px_0_0_black] active:shadow-none active:translate-y-0.5"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Total */}
+            <div className="flex items-center justify-between px-4 py-3 border-b-4 border-black bg-gray-50 shrink-0">
+              <span className="font-bold text-sm uppercase text-gray-600">Total Hutang</span>
+              <span className="font-black text-2xl text-red-600">
+                {formatRupiah(selectedCustomer.nominal)}
+              </span>
+            </div>
+
+            {/* Toolbar: Tambah Barang */}
+            {selectedCustomer.status === "Belum Lunas" && (
+              <div className="px-4 pt-4 shrink-0">
+                <button
+                  onClick={() => setIsProductModalOpen(true)}
+                  className="p-2 px-4 border-4 border-black bg-[#ffde59] font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] transition-all text-sm"
+                >
+                  + Tambah Barang
+                </button>
+              </div>
+            )}
+
+            {/* Daftar Barang */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {!selectedCustomer.transaksi_id ? (
+                <div className="text-center py-10 text-gray-500 font-bold">
+                  <p>Paylater ini tidak memiliki transaksi detail terhubung.</p>
+                  <p className="text-xs mt-1">Dibuat manual via form Tambah Tagihan.</p>
+                </div>
+              ) : kasbonDetails.length === 0 ? (
+                <p className="text-center py-8 text-gray-500 font-bold">Belum ada detail barang.</p>
+              ) : (
+                <div className="border-4 border-black overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-black text-white text-xs uppercase">
+                        <th className="p-3 text-left">Produk</th>
+                        <th className="p-3 text-center">Qty</th>
+                        <th className="p-3 text-right">Harga Satuan</th>
+                        <th className="p-3 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="font-bold">
+                      {kasbonDetails.map((d, i) => (
+                        <tr key={d.id || i} className="border-b-2 border-gray-200 hover:bg-yellow-50">
+                          <td className="p-3">{d.nama_produk}</td>
+                          <td className="p-3 text-center">{d.jumlah}</td>
+                          <td className="p-3 text-right">{formatRupiah(d.harga_satuan)}</td>
+                          <td className="p-3 text-right font-black">
+                            {formatRupiah(d.jumlah * d.harga_satuan)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t-4 border-black bg-gray-50 flex justify-end shrink-0">
+              <button
+                onClick={() => { setSelectedCustomer(null); setKasbonDetails([]); }}
+                className="px-6 py-2 font-black border-4 border-black bg-white shadow-[4px_4px_0_0_black] hover:translate-y-1 hover:shadow-none transition-all uppercase text-sm"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====== MODAL KATALOG PRODUK (TAMBAH KE PAYLATER) ====== */}
+      {isProductModalOpen && (
+        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-3 backdrop-blur-sm">
+          <div className="bg-white w-[95%] max-w-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b-4 border-black shrink-0">
+              <h3 className="font-black text-xl uppercase text-left">Pilih Produk</h3>
+              <button
+                onClick={() => { setIsProductModalOpen(false); setSearchKatalog(""); setKategoriKatalog("Semua"); }}
+                className="text-2xl font-black hover:text-red-600 border-2 border-black bg-gray-100 w-9 h-9 flex items-center justify-center shadow-[2px_2px_0_0_black] active:shadow-none active:translate-y-0.5"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Filter & Pencarian */}
+            <div className="flex gap-2 p-4 border-b-4 border-black shrink-0">
+              <input
+                type="text"
+                placeholder="Cari nama barang..."
+                value={searchKatalog}
+                onChange={(e) => setSearchKatalog(e.target.value)}
+                className="flex-1 p-2 border-4 border-black font-bold outline-none focus:bg-gray-50"
+                autoFocus
+              />
+              <select
+                value={kategoriKatalog}
+                onChange={(e) => setKategoriKatalog(e.target.value)}
+                className="p-2 border-4 border-black cursor-pointer outline-none bg-white font-bold text-sm"
+              >
+                <option value="Semua">Semua Kategori</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.nama}>{c.nama}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Grid Produk */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {filteredKatalogProduk.length === 0 ? (
+                <p className="text-center py-10 text-gray-500 font-bold">
+                  Produk tidak ditemukan.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {filteredKatalogProduk.map((produk) => (
+                    <div
+                      key={produk.id}
+                      className="flex items-center justify-between gap-3 border-4 border-black p-3 bg-white shadow-[3px_3px_0_0_black] hover:bg-yellow-50 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-sm leading-tight truncate">{produk.nama}</p>
+                        <p className="text-xs font-bold text-gray-500 mt-0.5">
+                          {produk.kategori} · Stok: {produk.stok ?? "–"}
+                        </p>
+                        <p className="font-black text-neo-teal text-sm mt-1">
+                          {formatRupiah(produk.harga)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleTambahProdukKePaylater(produk)}
+                        className="bg-[#ffde59] text-black px-3 py-2 border-2 border-black font-black text-xs shadow-[2px_2px_0_0_black] active:translate-y-0.5 active:shadow-none transition-all uppercase shrink-0 hover:bg-yellow-400"
+                      >
+                        + Tambah
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* ====== MODALS ====== */}
       {isModalOpen && (
@@ -2874,13 +3170,12 @@ export default function Admin() {
               <div>
                 <label className="block font-bold mb-1">Nominal (Rp)</label>
                 <input
-                  type="number"
-                  value={expenseForm.nominal}
-                  onChange={(e) =>
-                    setExpenseForm({ ...expenseForm, nominal: e.target.value })
-                  }
+                  type="text"
+                  inputMode="numeric"
+                  value={nominalInput}
+                  onChange={handleNominalChange}
                   className="w-full p-2 border-4 border-black font-bold focus:outline-none"
-                  placeholder="50000"
+                  placeholder="50.000"
                   required
                 />
               </div>
@@ -2966,7 +3261,7 @@ export default function Admin() {
               &times;
             </button>
             <h2 className="text-xl font-black mb-4 border-b-4 border-black pb-2 uppercase text-yellow-500 text-left">
-              Tambah Nominal Kasbon
+              Tambah Tagihan Paylater
             </h2>
             <p className="font-bold mb-4 text-sm text-gray-600">
               Tambah tagihan untuk{" "}
