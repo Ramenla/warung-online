@@ -1,6 +1,17 @@
 import React, { useContext, useState } from 'react';
 import { CartContext } from '../context/CartContext';
 import { supabase } from '../supabaseClient';
+import {
+  Banknote,
+  CreditCard,
+  MessageCircle,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Store,
+  Truck,
+  X,
+} from 'lucide-react';
 
 const CartSidebar = ({ isOpen, onClose }) => {
   const { cart, totalPrice, increaseQuantity, decreaseQuantity, clearCart, formatRupiah } = useContext(CartContext);
@@ -101,98 +112,176 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose}></div>}
+      {isOpen && (
+        <div
+          className="cart-sidebar-backdrop fixed inset-0 z-40"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white border-l-4 border-black z-50 transform transition-transform duration-300 shadow-[-8px_0px_0px_0px_rgba(0,0,0,1)] ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="flex flex-col h-full">
-            
-            <div className="flex justify-between items-center p-4 border-b-4 border-black bg-neo-bg">
-                <h2 className="text-2xl font-black uppercase">Keranjang</h2>
-                <button onClick={onClose} className="text-2xl font-black hover:text-red-600">X</button>
+      <aside
+        className={`cart-sidebar fixed top-0 right-0 z-50 flex h-full w-full flex-col bg-white transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Keranjang belanja"
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+      >
+        <header className="cart-sidebar-header flex items-center justify-between">
+          <div>
+            <h2>Keranjang</h2>
+            <p>{cart.length} jenis barang</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="cart-close-button"
+            aria-label="Tutup keranjang"
+          >
+            <X size={20} strokeWidth={1.8} />
+          </button>
+        </header>
+
+        {cart.length === 0 ? (
+          <div className="cart-empty-state">
+            <span className="cart-empty-icon">
+              <ShoppingBag size={28} strokeWidth={1.5} />
+            </span>
+            <h3>Keranjang masih kosong</h3>
+            <p>Tambahkan produk yang Anda butuhkan, lalu pesan dari sini.</p>
+            <button type="button" onClick={onClose} className="cart-continue-button">
+              Lihat produk
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="cart-sidebar-content">
+              <section className="cart-customer-fields" aria-label="Informasi pemesan">
+                <label>
+                  <span>Nama pemesan <span aria-hidden="true">*</span></span>
+                  <input
+                    type="text"
+                    placeholder="Masukkan nama Anda"
+                    value={namaPembeli}
+                    onChange={(e) => setNamaPembeli(e.target.value)}
+                    autoComplete="name"
+                  />
+                </label>
+                <label>
+                  <span>Catatan <span className="cart-optional">(opsional)</span></span>
+                  <input
+                    type="text"
+                    placeholder="Contoh: jangan pakai kantong"
+                    value={catatan}
+                    onChange={(e) => setCatatan(e.target.value)}
+                  />
+                </label>
+              </section>
+
+              <section className="cart-items" aria-label="Produk di keranjang">
+                {cart.map((item) => (
+                  <article key={item.id} className="cart-sidebar-item">
+                    <div className="cart-item-details">
+                      <h3>{item.name}</h3>
+                      <p>{formatRupiah(item.price)} / {item.unit}</p>
+                      <strong>{formatRupiah(item.price * item.quantity)}</strong>
+                    </div>
+                    <div className="cart-quantity-control" aria-label={`Jumlah ${item.name}`}>
+                      <button
+                        type="button"
+                        onClick={() => decreaseQuantity(item.id)}
+                        aria-label={`Kurangi ${item.name}`}
+                      >
+                        <Minus size={15} />
+                      </button>
+                      <span aria-live="polite">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => increaseQuantity(item.id)}
+                        aria-label={`Tambah ${item.name}`}
+                      >
+                        <Plus size={15} />
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </section>
+
+              <section className="cart-checkout-options">
+                <fieldset>
+                  <legend>Metode pengiriman</legend>
+                  <div className="cart-option-grid">
+                    {[
+                      { label: 'Ambil Sendiri', Icon: Store },
+                      { label: 'Diantar', Icon: Truck },
+                    ].map(({ label, Icon }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setDeliveryMethod(label)}
+                        className={deliveryMethod === label ? 'is-selected' : ''}
+                        aria-pressed={deliveryMethod === label}
+                      >
+                        <Icon size={17} strokeWidth={1.8} />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {deliveryMethod === 'Diantar' && (
+                    <label className="cart-address-field">
+                      <span>Alamat pengiriman <span aria-hidden="true">*</span></span>
+                      <textarea
+                        placeholder="Masukkan alamat lengkap"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        rows={3}
+                      />
+                    </label>
+                  )}
+                </fieldset>
+
+                <fieldset>
+                  <legend>Metode pembayaran</legend>
+                  <div className="cart-option-grid">
+                    {[
+                      { label: 'Tunai', Icon: Banknote },
+                      { label: 'QRIS', Icon: CreditCard },
+                    ].map(({ label, Icon }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setMetodePembayaran(label)}
+                        className={metodePembayaran === label ? 'is-selected' : ''}
+                        aria-pressed={metodePembayaran === label}
+                      >
+                        <Icon size={17} strokeWidth={1.8} />
+                        {label === 'Tunai' ? 'Tunai di tempat' : 'Nontunai / QRIS'}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              </section>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-
-              <div className="p-4 border-b-2 border-gray-200 space-y-2 bg-yellow-50">
-                <input type="text" placeholder="Nama Pembeli *" value={namaPembeli} onChange={(e) => setNamaPembeli(e.target.value)} className="w-full p-2 border-2 border-black font-bold focus:outline-none text-sm" />
-                <input type="text" placeholder="Catatan (opsional)" value={catatan} onChange={(e) => setCatatan(e.target.value)} className="w-full p-2 border-2 border-black font-bold focus:outline-none text-sm" />
+            <footer className="cart-sidebar-footer">
+              <div className="cart-total-row">
+                <span>Total belanja</span>
+                <strong>{formatRupiah(totalPrice)}</strong>
               </div>
-
-              <div className="p-4 space-y-3">
-                {cart.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-gray-500">
-                    <p className="font-bold text-lg">Keranjang Kosong</p>
-                  </div>
-                ) : (
-                  cart.map((item) => (
-                    <div key={item.id} className="flex flex-col bg-white border-2 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-bold text-sm line-clamp-2">{item.name}</h4>
-                          <p className="text-xs text-gray-600">{formatRupiah(item.price)} / {item.unit}</p>
-                        </div>
-                        <p className="font-black text-sm">{formatRupiah(item.price * item.quantity)}</p>
-                      </div>
-                      <div className="flex items-center justify-end gap-3 mt-1">
-                        <button onClick={() => decreaseQuantity(item.id)} className="w-8 h-8 flex items-center justify-center bg-gray-200 border-2 border-black font-black hover:bg-red-200 active:translate-y-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">-</button>
-                        <span className="font-bold w-4 text-center">{item.quantity}</span>
-                        <button onClick={() => increaseQuantity(item.id)} className="w-8 h-8 flex items-center justify-center bg-neo-teal border-2 border-black font-black hover:bg-teal-400 active:translate-y-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">+</button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {cart.length > 0 && (
-                <div className="p-4 border-t-2 border-gray-200 space-y-4">
-                  <div>
-                    <label className="block font-black text-sm mb-2 uppercase">Pengiriman</label>
-                    <div className="flex gap-2">
-                      {['Ambil Sendiri', 'Diantar'].map(opt => (
-                        <button key={opt} type="button" onClick={() => setDeliveryMethod(opt)}
-                          className={`flex-1 py-2 font-bold text-sm border-2 border-black transition-all
-                          ${deliveryMethod === opt ? 'bg-black text-white shadow-none' : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none'}`}
-                        >{opt}</button>
-                      ))}
-                    </div>
-                    {deliveryMethod === 'Diantar' && (
-                      <textarea placeholder="Alamat lengkap *" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full p-2 border-2 border-black font-bold focus:outline-none text-sm mt-2 h-16 resize-none" />
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block font-black text-sm mb-2 uppercase">Pembayaran</label>
-                    <div className="flex flex-col gap-2">
-                       <button type="button" onClick={() => setMetodePembayaran('Tunai')}
-                          className={`w-full py-3 font-black text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] transition-all
-                          ${metodePembayaran === 'Tunai' ? 'bg-[#ffde59] shadow-[2px_2px_0_0_black] translate-y-1' : 'bg-white'}`}
-                        >Tunai / Bayar di Tempat</button>
-                       <button type="button" onClick={() => setMetodePembayaran('QRIS')}
-                          className={`w-full py-3 font-black text-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0_0_black] transition-all
-                          ${metodePembayaran === 'QRIS' ? 'bg-[#ffde59] shadow-[2px_2px_0_0_black] translate-y-1' : 'bg-white'}`}
-                        >Nontunai / QRIS</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t-4 border-black bg-gray-50">
-                <div className="flex justify-between items-center mb-3">
-                    <span className="font-bold text-lg">Total</span>
-                    <span className="font-black text-2xl">{formatRupiah(totalPrice)}</span>
-                </div>
-                <button 
-                    onClick={handleCheckout}
-                    disabled={cart.length === 0 || processing}
-                    className={`w-full py-3 font-black text-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all
-                    ${cart.length === 0 || processing ? 'bg-gray-400 cursor-not-allowed' : 'bg-neo-purple hover:bg-purple-800'}`}
-                >
-                    {processing ? 'Memproses...' : 'Pesan via WhatsApp'}
-                </button>
-            </div>
-        </div>
-      </div>
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={processing}
+                className="cart-checkout-button"
+              >
+                <MessageCircle size={18} />
+                {processing ? 'Memproses pesanan...' : 'Pesan via WhatsApp'}
+              </button>
+            </footer>
+          </>
+        )}
+      </aside>
     </>
   );
 };

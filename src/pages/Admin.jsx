@@ -2,7 +2,21 @@ import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { handleSupabaseError } from "../utils/errorHandler";
-import { Bell, X } from "lucide-react";
+import {
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  LayoutDashboard,
+  Menu,
+  Package,
+  PanelsTopLeft,
+  ShoppingCart,
+  Store,
+  Wallet,
+  X,
+} from "lucide-react";
 import {
   LineChart,
   Line,
@@ -23,8 +37,8 @@ import {
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white w-[95%] max-w-sm border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6">
+    <div className="admin-modal-backdrop fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="admin-modal-panel admin-confirm-modal bg-white w-[95%] max-w-sm border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6">
         <h3 className="font-black text-xl uppercase mb-2 text-left">
           {title || "Konfirmasi"}
         </h3>
@@ -51,8 +65,8 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
 function AlertModal({ open, message, onClose }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-[#ffde59] w-[95%] max-w-sm border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6">
+    <div className="admin-modal-backdrop fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="admin-modal-panel admin-alert-modal bg-[#ffde59] w-[95%] max-w-sm border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6">
         <p className="font-bold text-sm mb-6">{message}</p>
         <button
           onClick={onClose}
@@ -1073,8 +1087,8 @@ export default function Admin() {
     });
 
     return [
-      { name: 'Pemasukan', value: agregatPemasukan, fill: '#10b981' },
-      { name: 'Pengeluaran', value: agregatPengeluaran, fill: '#ef4444' },
+      { name: 'Pemasukan', value: agregatPemasukan, fill: '#0071e3' },
+      { name: 'Pengeluaran', value: agregatPengeluaran, fill: '#d6d6d6' },
     ];
   }, [filteredArusKas]);
 
@@ -1091,9 +1105,9 @@ export default function Admin() {
     });
 
     return [
-      { name: 'Selesai', count: kuantitasSelesai, fill: '#10b981' },
-      { name: 'Pending', count: kuantitasPending, fill: '#f59e0b' },
-      { name: 'Batal', count: kuantitasBatal, fill: '#ef4444' },
+      { name: 'Selesai', count: kuantitasSelesai, fill: '#0071e3' },
+      { name: 'Pending', count: kuantitasPending, fill: '#86868b' },
+      { name: 'Batal', count: kuantitasBatal, fill: '#d6d6d6' },
     ];
   }, [filteredTransaksi]);
 
@@ -1231,13 +1245,13 @@ export default function Admin() {
   };
 
   const navItems = [
-    { id: "dashboard", label: "Dasbor Utama", short: "D" },
-    { id: "etalase", label: "Atur Etalase", short: "E" },
-    { id: "kasir", label: "Mesin Kasir", short: "M" },
-    { id: "produk", label: "Daftar Produk", short: "P" },
-    { id: "pesanan", label: "Pesanan Masuk", short: "O" },
-    { id: "bukukas", label: "Kas Keuangan", short: "K" },
-    { id: "kasbon", label: "Paylater", short: "B" },
+    { id: "dashboard", label: "Dasbor Utama", icon: LayoutDashboard },
+    { id: "etalase", label: "Atur Etalase", icon: PanelsTopLeft },
+    { id: "kasir", label: "Mesin Kasir", icon: ShoppingCart },
+    { id: "produk", label: "Daftar Produk", icon: Package },
+    { id: "pesanan", label: "Pesanan Masuk", icon: ClipboardList },
+    { id: "bukukas", label: "Kas Keuangan", icon: Wallet },
+    { id: "kasbon", label: "Paylater", icon: CreditCard },
   ];
 
   const handleNavClick = (id) => {
@@ -1246,7 +1260,7 @@ export default function Admin() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-neo-bg font-sans text-black selection:bg-neo-purple selection:text-white">
+    <div className="admin-shell flex h-screen w-full overflow-hidden bg-neo-bg font-sans text-black selection:bg-neo-purple selection:text-white">
       {/* Custom Modals */}
       <ConfirmModal
         open={confirmState.open}
@@ -1271,49 +1285,61 @@ export default function Admin() {
 
       {/* ====== SIDEBAR (WHITE) ====== */}
       <aside
+        aria-label="Navigasi admin"
         className={`
+        admin-sidebar
         fixed md:sticky top-0 left-0 h-full overflow-y-auto z-50 md:z-auto
         bg-white text-black border-r-4 border-black
         flex flex-col flex-shrink-0
         transition-all duration-300 ease-in-out
-        ${isSidebarMinimized ? "md:w-16" : "md:w-60"}
+        ${isSidebarMinimized ? "admin-sidebar-collapsed md:w-16" : "md:w-60"}
         w-64
         ${isSidebarOpen ? "translate-x-0 shadow-[8px_0px_0px_0px_rgba(0,0,0,1)]" : "-translate-x-full md:translate-x-0"}
       `}
       >
-        <div className="flex items-center justify-between p-4 border-b-4 border-black">
+        <div className="admin-sidebar-brand flex items-center justify-between p-4 border-b-4 border-black">
           {!isSidebarMinimized && (
-            <h1 className="font-black text-lg uppercase tracking-tight truncate text-left">
-              Admin Panel
-            </h1>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="admin-brand-mark" aria-hidden="true">
+                <Store size={18} />
+              </span>
+              <div className="min-w-0">
+                <h1 className="font-black text-lg uppercase tracking-tight truncate text-left">
+                  Toko Semoga Berkah
+                </h1>
+                <p className="admin-brand-caption">Panel pengelola</p>
+              </div>
+            </div>
           )}
           <button
             onClick={() => setIsSidebarOpen(false)}
+            aria-label="Tutup navigasi"
             className="md:hidden font-black text-xl hover:text-red-600 ml-auto"
           >
-            X
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
-        <nav className="flex-1 flex flex-col py-2">
+        <nav className="admin-nav flex-1 flex flex-col py-2">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`text-left px-4 py-3 font-bold text-sm border-b border-gray-200 transition-all
+              aria-current={activeView === item.id ? "page" : undefined}
+              className={`admin-nav-item text-left px-4 py-3 font-bold text-sm border-b border-gray-200 transition-all
               ${
                 activeView === item.id
-                  ? "bg-black text-white"
+                  ? "admin-nav-active bg-black text-white"
                   : "hover:bg-gray-100"
               }
               ${isSidebarMinimized ? "md:text-center md:px-2" : ""}
               `}
               title={isSidebarMinimized ? item.label : ""}
             >
-              <span className="hidden md:inline">
-                {isSidebarMinimized ? item.short : item.label}
+              <item.icon size={18} aria-hidden="true" />
+              <span className={isSidebarMinimized ? "md:hidden" : ""}>
+                {item.label}
               </span>
-              <span className="md:hidden">{item.label}</span>
             </button>
           ))}
         </nav>
@@ -1323,7 +1349,11 @@ export default function Admin() {
             onClick={() => setIsSidebarMinimized(!isSidebarMinimized)}
             className="hidden md:flex w-full items-center justify-center bg-gray-100 py-2 font-black text-sm border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5 transition-all"
           >
-            {isSidebarMinimized ? ">" : "<"}
+            {isSidebarMinimized ? (
+              <ChevronRight size={17} aria-hidden="true" />
+            ) : (
+              <ChevronLeft size={17} aria-hidden="true" />
+            )}
           </button>
           {!isSidebarMinimized && (
             <button
@@ -1348,14 +1378,14 @@ export default function Admin() {
       {/* ====== MAIN CONTENT ====== */}
       <main className="flex-1 h-full flex flex-col overflow-hidden">
         {/* Mobile Topbar */}
-        <div className="sticky top-0 z-30 flex items-center justify-between bg-white border-b-4 border-black p-3 md:p-4 md:hidden shadow-md">
+        <div className="admin-topbar sticky top-0 z-30 flex items-center justify-between bg-white border-b-4 border-black p-3 md:p-4">
           {/* Bagian Kiri: Tombol Menu & Judul */}
           <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="font-black text-2xl border-2 border-black bg-gray-100 w-10 h-10 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+              className="admin-menu-toggle md:hidden font-black text-2xl border-2 border-black bg-gray-100 w-10 h-10 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
             >
-              &#9776;
+              <Menu size={20} aria-hidden="true" />
             </button>
             <h2 className="font-black uppercase text-lg md:text-2xl truncate text-left">
               {navItems.find((n) => n.id === activeView)?.label}
@@ -1363,7 +1393,7 @@ export default function Admin() {
           </div>
           <button
             onClick={handleLogout}
-            className="hidden md:block bg-red-500 text-white px-3 py-1.5 font-bold border-2 border-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="bg-red-500 text-white px-3 py-1.5 font-bold border-2 border-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           >
             Keluar
           </button>
@@ -1372,7 +1402,7 @@ export default function Admin() {
         {/* Notifikasi Pesanan Baru */}
         {pesananBaru && (
           <div
-            className="fixed top-6 right-6 z-[100] bg-[#ffde59] border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] animate-bounce cursor-pointer max-w-xs"
+            className="admin-order-notification fixed top-6 right-6 z-[100] bg-[#ffde59] border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] animate-bounce cursor-pointer max-w-xs"
             onClick={() => setPesananBaru(null)}
           >
             <h3 className="font-black text-lg uppercase mb-1 text-left">
@@ -1383,7 +1413,7 @@ export default function Admin() {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-2 md:p-6 space-y-6 pb-20">
+        <div className="admin-content flex-1 overflow-y-auto p-2 md:p-6 pb-20" data-admin-view={activeView}>
           {loading && (
             <div className="p-10 text-center font-black animate-pulse text-xl">
               Memuat data...
@@ -1426,6 +1456,7 @@ export default function Admin() {
               {/* Stat Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard
+                  className="admin-stat-card"
                   title="Total Pendapatan"
                   value={formatRupiah(totalPemasukan)}
                   color="bg-green-500"
@@ -1433,6 +1464,7 @@ export default function Admin() {
                   small
                 />
                 <StatCard
+                  className="admin-stat-card"
                   title="Total Pengeluaran"
                   value={formatRupiah(totalPengeluaran)}
                   color="bg-red-500"
@@ -1440,6 +1472,7 @@ export default function Admin() {
                   small
                 />
                 <StatCard
+                  className="admin-stat-card"
                   title="Saldo Kas"
                   value={formatRupiah(saldoBersih)}
                   color={saldoBersih >= 0 ? "bg-neo-purple" : "bg-red-700"}
@@ -1447,6 +1480,7 @@ export default function Admin() {
                   small
                 />
                 <StatCard
+                  className="admin-stat-card"
                   title="Order Selesai"
                   value={completedOrders}
                   color="bg-neo-teal"
@@ -1473,26 +1507,27 @@ export default function Admin() {
                   <div className="h-56 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={dataChart}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1} vertical={false} />
-                        <XAxis dataKey="name" stroke="#000" tick={{fontWeight: 'bold', fontSize: 11}} axisLine={{strokeWidth: 3}} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e7" vertical={false} />
+                        <XAxis dataKey="name" stroke="#86868b" tick={{ fill: '#6e6e73', fontSize: 11 }} axisLine={{ strokeWidth: 1 }} tickLine={false} />
                         <YAxis
-                          stroke="#000"
-                          tick={{fontWeight: 'bold', fontSize: 11}}
-                          axisLine={{strokeWidth: 3}}
+                          stroke="#86868b"
+                          tick={{ fill: '#6e6e73', fontSize: 11 }}
+                          axisLine={{ strokeWidth: 1 }}
+                          tickLine={false}
                           width={55}
                           tickFormatter={(val) => `Rp${val/1000}k`}
                         />
                         <Tooltip 
-                          contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                          contentStyle={{ backgroundColor: '#fff', border: '1px solid #d2d2d7', borderRadius: 12, fontSize: 12, boxShadow: '0 8px 24px rgba(0,0,0,.12)' }}
                           formatter={(value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)}
                         />
                         <Line
                           type="monotone"
                           dataKey="total"
-                          stroke="#000"
-                          strokeWidth={4}
-                          activeDot={{r: 7, fill: '#ffde59', stroke: '#000', strokeWidth: 3}}
-                          dot={{r: 3, fill: '#000'}}
+                          stroke="#0071e3"
+                          strokeWidth={3}
+                          activeDot={{ r: 6, fill: '#0071e3', stroke: '#fff', strokeWidth: 2 }}
+                          dot={{ r: 3, fill: '#0071e3', stroke: '#fff', strokeWidth: 1 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -1513,8 +1548,8 @@ export default function Admin() {
                           outerRadius={80}
                           paddingAngle={4}
                           dataKey="value"
-                          stroke="#000"
-                          strokeWidth={3}
+                          stroke="#fff"
+                          strokeWidth={2}
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         >
                           {dataPieChartArusKas.map((entry, idx) => (
@@ -1522,12 +1557,12 @@ export default function Admin() {
                           ))}
                         </Pie>
                         <Tooltip
-                          contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                          contentStyle={{ backgroundColor: '#fff', border: '1px solid #d2d2d7', borderRadius: 12, fontSize: 12, boxShadow: '0 8px 24px rgba(0,0,0,.12)' }}
                           formatter={(value) => formatRupiah(value)}
                         />
                         <Legend
-                          wrapperStyle={{fontWeight: 'bold', fontSize: 13}}
-                          formatter={(value) => <span style={{color: '#000', fontWeight: 800}}>{value}</span>}
+                          wrapperStyle={{ fontSize: 12 }}
+                          formatter={(value) => <span style={{ color: '#1d1d1f', fontWeight: 500 }}>{value}</span>}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -1553,14 +1588,14 @@ export default function Admin() {
                   <div className="h-56 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={dataBarChartDistribusi} layout="vertical" margin={{ left: 10, right: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1} horizontal={false} />
-                        <XAxis type="number" stroke="#000" tick={{fontWeight: 'bold', fontSize: 12}} axisLine={{strokeWidth: 3}} allowDecimals={false} />
-                        <YAxis type="category" dataKey="name" stroke="#000" tick={{fontWeight: 'bold', fontSize: 12}} axisLine={{strokeWidth: 3}} width={60} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e7" horizontal={false} />
+                        <XAxis type="number" stroke="#86868b" tick={{ fill: '#6e6e73', fontSize: 11 }} axisLine={{ strokeWidth: 1 }} tickLine={false} allowDecimals={false} />
+                        <YAxis type="category" dataKey="name" stroke="#86868b" tick={{ fill: '#6e6e73', fontSize: 11 }} axisLine={{ strokeWidth: 1 }} tickLine={false} width={60} />
                         <Tooltip
-                          contentStyle={{backgroundColor: '#fff', border: '4px solid #000', borderRadius: 0, fontWeight: 'bold', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                          contentStyle={{ backgroundColor: '#fff', border: '1px solid #d2d2d7', borderRadius: 12, fontSize: 12, boxShadow: '0 8px 24px rgba(0,0,0,.12)' }}
                           formatter={(value) => [`${value} order`]}
                         />
-                        <Bar dataKey="count" stroke="#000" strokeWidth={2} barSize={28}>
+                        <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={24}>
                           {dataBarChartDistribusi.map((entry, idx) => (
                             <Cell key={`bar-${idx}`} fill={entry.fill} />
                           ))}
@@ -1654,7 +1689,7 @@ export default function Admin() {
                       className="bg-white border-4 border-black p-4 shadow-[4px_4px_0_0_black]"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-black text-xl uppercase bg-[#ffde59] px-2 border-2 border-black transform -rotate-1 inline-block text-left">
+                        <h3 className="font-black text-xl uppercase bg-[#ffde59] px-2 border-2 border-black inline-block text-left">
                           {s.nama}
                         </h3>
                         <div className="flex gap-2 text-sm">
@@ -1771,13 +1806,13 @@ export default function Admin() {
 
                               if (products.length === 0)
                                 return (
-                                  <p className="text-gray-500 italic p-4 text-center col-span-2">
+                                  <p className="text-gray-500 p-4 text-center col-span-2">
                                     Belum ada produk untuk dipilih.
                                   </p>
                                 );
                               if (filteredProdukForSection.length === 0)
                                 return (
-                                  <p className="text-gray-500 italic p-4 text-center col-span-2">
+                                  <p className="text-gray-500 p-4 text-center col-span-2">
                                     Barang tidak ditemukan.
                                   </p>
                                 );
@@ -1843,10 +1878,10 @@ export default function Admin() {
 
           {/* =============== KASIR (POS) =============== */}
           {!loading && activeView === "kasir" && (
-            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-0 lg:gap-6 h-full overflow-hidden pb-4">
+            <div className="admin-pos-layout flex flex-col lg:grid lg:grid-cols-3 gap-0 lg:gap-6 h-full overflow-hidden pb-4">
               {/* KIRI: Etalase */}
-              <div className="col-span-2 flex-1 h-full overflow-y-auto p-2 md:p-4 pb-24 lg:pb-4 flex flex-col border-r-0 lg:border-r-4 border-black">
-                <div className="p-4 border-b-4 border-black shrink-0">
+              <div className="admin-pos-catalog col-span-2 flex-1 h-full overflow-y-auto p-2 md:p-4 pb-24 lg:pb-4 flex flex-col border-r-0 lg:border-r-4 border-black">
+                <div className="admin-pos-controls p-4 border-b-4 border-black shrink-0">
                   <input
                     type="text"
                     placeholder="Scan atau cari nama barang..."
@@ -1872,7 +1907,7 @@ export default function Admin() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 pb-6">
+                  <div className="admin-pos-products grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 pb-6">
                     {posFilteredProducts.length === 0 && (
                       <div className="col-span-full py-20 text-center font-bold text-gray-400">
                         Barang tidak ditemukan
@@ -1884,7 +1919,7 @@ export default function Admin() {
                         <div
                           key={p.id}
                           onClick={() => handlePosAddToCart(p)}
-                          className={`border-4 border-black p-3 flex flex-col justify-between cursor-pointer transition-transform active:translate-y-1 ${isOutOfStock ? "bg-gray-200 grayscale opacity-70 cursor-not-allowed shadow-none" : "bg-white shadow-[4px_4px_0_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_black]"}`}
+                          className={`admin-pos-product border-4 border-black p-3 flex flex-col justify-between cursor-pointer transition-transform active:translate-y-1 ${isOutOfStock ? "bg-gray-200 grayscale opacity-70 cursor-not-allowed shadow-none" : "bg-white shadow-[4px_4px_0_0_black] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_black]"}`}
                         >
                           <div>
                             <div className="w-full h-24 bg-gray-100 border-2 border-black mb-2 overflow-hidden flex items-center justify-center">
@@ -1922,7 +1957,7 @@ export default function Admin() {
               </div>
 
               {/* KANAN: Struk/Cart (HIDDEN ON MOBILE, ONLY ON DESKTOP) */}
-              <div className="hidden lg:flex flex-col col-span-1 h-full overflow-hidden  border-4 border-black bg-white p-4 shrink-0 shadow-[6px_6px_0_0_black]">
+              <div className="admin-pos-cart hidden lg:flex flex-col col-span-1 h-full overflow-hidden border-4 border-black bg-white p-4 shrink-0 shadow-[6px_6px_0_0_black]">
                 <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase shrink-0 text-left">
                   Keranjang Kasir
                 </h3>
@@ -2071,7 +2106,7 @@ export default function Admin() {
               {/* ======== MOBILE ONLY: FLOATING SUMMARY BAR ======== */}
               {posCart.length > 0 && (
                 <div
-                  className="fixed bottom-0 left-0 w-full bg-[#ffde59] border-t-4 border-black p-4 cursor-pointer z-40 flex justify-between items-center lg:hidden shadow-[0_-4px_0_0_rgba(0,0,0,0.1)] hover:bg-[#ffe373] transition-colors"
+                  className="admin-pos-mobile-bar fixed bottom-0 left-0 w-full bg-[#ffde59] border-t-4 border-black p-4 cursor-pointer z-40 flex justify-between items-center lg:hidden shadow-[0_-4px_0_0_rgba(0,0,0,0.1)] hover:bg-[#ffe373] transition-colors"
                   onClick={() => setIsMobileCartOpen(true)}
                 >
                   <div className="flex items-center gap-3">
@@ -2091,11 +2126,11 @@ export default function Admin() {
               {/* ======== MOBILE ONLY: BOTTOM SHEET MODAL CHECKOUT ======== */}
               {isMobileCartOpen && (
                 <div
-                  className="fixed inset-0 bg-black/60 z-50 flex items-end lg:hidden backdrop-blur-sm transition-opacity"
+                  className="admin-pos-sheet-backdrop fixed inset-0 bg-black/60 z-50 flex items-end lg:hidden backdrop-blur-sm transition-opacity"
                   onClick={() => setIsMobileCartOpen(false)}
                 >
                   <div
-                    className="bg-white w-full max-h-[85vh] rounded-t-2xl border-t-4 border-l-4 border-r-4 border-black flex flex-col overflow-hidden relative animate-slide-up"
+                    className="admin-pos-sheet bg-white w-full max-h-[85vh] rounded-t-2xl border-t-4 border-l-4 border-r-4 border-black flex flex-col overflow-hidden relative animate-slide-up"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Header Modal */}
@@ -2778,7 +2813,7 @@ export default function Admin() {
                               </td>
                               <td className="p-3 text-center whitespace-nowrap">
                                 <span
-                                  className={`px-2 py-0.5 text-xs border border-black font-bold -skew-x-6 inline-block ${k.status === "Lunas" ? "bg-green-300 text-green-900" : "bg-red-500 text-white"}`}
+                                  className={`px-2 py-0.5 text-xs border border-black font-bold inline-block ${k.status === "Lunas" ? "bg-green-300 text-green-900" : "bg-red-500 text-white"}`}
                                 >
                                   {k.status}
                                 </span>
@@ -2814,7 +2849,7 @@ export default function Admin() {
                                     >
                                       Detail
                                     </button>
-                                    <span className="text-green-700 bg-green-100 px-2 py-1 font-black text-xs border border-green-700 -skew-x-6 inline-block">
+                                    <span className="text-green-700 bg-green-100 px-2 py-1 font-black text-xs border border-green-700 inline-block">
                                       Selesai
                                     </span>
                                     <button
@@ -3378,7 +3413,7 @@ export default function Admin() {
           setIsFabOpen(!isFabOpen);
           if (!isFabOpen) setUnreadCount(0); // Reset badge saat dibuka
         }}
-        className={`fixed top-3 right-4 md:top-auto md:bottom-6 md:right-6 z-[100] p-4 bg-white border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:bg-[#ffde59] ${isFabOpen ? "bg-[#ffde59] translate-x-[2px] translate-y-[2px] shadow-none" : ""}`}
+        className={`admin-notification-trigger fixed top-3 right-4 md:top-auto md:bottom-6 md:right-6 z-[100] p-4 bg-white border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:bg-[#ffde59] ${isFabOpen ? "bg-[#ffde59] translate-x-[2px] translate-y-[2px] shadow-none" : ""}`}
         aria-label="Buka Notifikasi"
       >
         <div className="relative">
@@ -3398,10 +3433,10 @@ export default function Admin() {
   );
 }
 
-function StatCard({ title, value, color, text, small }) {
+function StatCard({ title, value, color, text, small, className = "" }) {
   return (
     <div
-      className={`${color} ${text} border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
+      className={`admin-stat-card ${className} ${color} ${text} border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
     >
       <h3 className="text-xs font-bold uppercase opacity-80 text-left">{title}</h3>
       <p

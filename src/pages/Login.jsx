@@ -28,8 +28,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-yellow-300 flex items-center justify-center p-4">
-      <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-md">
+    <div className="login-page min-h-screen bg-yellow-300 flex items-center justify-center p-4">
+      <div className="login-card bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-md">
         <h1 className="text-4xl font-black mb-6 uppercase text-center border-b-4 border-black pb-4">
           Admin Login
         </h1>
