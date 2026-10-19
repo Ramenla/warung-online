@@ -2698,22 +2698,62 @@
 }
 
 #admin-app .admin-paylater-actions {
+  display: grid !important;
+  grid-template-columns: minmax(72px, 1fr) minmax(72px, 1fr) 36px;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  min-width: 196px;
+  margin-inline: auto;
 }
 
-#admin-app .admin-paylater-actions button,
-#admin-app .admin-paylater-actions > span {
-  min-height: 34px;
-  padding: 7px 10px;
+#admin-app .admin-paylater-actions .admin-paylater-action-button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
   border-radius: 8px !important;
   line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
 }
 
-#admin-app .admin-paylater-actions button[title="Hapus"] {
-  min-width: 34px;
-  padding-inline: 9px;
+#admin-app .admin-paylater-actions .admin-paylater-detail {
+  grid-column: 1;
+}
+
+#admin-app .admin-paylater-actions .admin-paylater-delete {
+  grid-column: 3;
+  width: 36px;
+  min-width: 36px;
+  padding-inline: 0;
+}
+
+#admin-app .admin-paylater-actions .admin-paylater-settled,
+#admin-app .admin-paylater-actions .admin-paylater-completed {
+  grid-column: 2;
+}
+
+#admin-app .admin-paylater-actions .admin-paylater-completed {
+  background: #e8f5eb;
+  color: #176b3a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  #admin-app [data-admin-view="kasbon"] table {
+    min-width: 760px;
+  }
+
+  #admin-app [data-admin-view="kasbon"] th:last-child,
+  #admin-app [data-admin-view="kasbon"] td:last-child {
+    width: 220px;
+    min-width: 220px;
+  }
 }
 
 #admin-app .admin-notification-trigger {

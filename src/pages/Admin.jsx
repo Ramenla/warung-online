@@ -2855,38 +2855,38 @@ export default function Admin() {
                                   <div className="admin-paylater-actions flex gap-1 justify-center flex-wrap">
                                     <button
                                       onClick={() => handleOpenKasbonDetail(k)}
-                                      className="bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
+                                      className="admin-paylater-action-button admin-paylater-detail bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
                                     >
                                       Detail
                                     </button>
                                     <button
+                                      onClick={() => handleLunasKasbon(k)}
+                                      className="admin-paylater-action-button admin-paylater-settled bg-neo-teal text-black px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase hover:bg-teal-400"
+                                    >
+                                      Lunas
+                                    </button>
+                                    <button
                                       onClick={() => handleDeleteKasbon(k.id)}
-                                      className="bg-red-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600"
+                                      className="admin-paylater-action-button admin-paylater-delete bg-red-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600"
                                       title="Hapus"
                                     >
                                       X
-                                    </button>
-                                    <button
-                                      onClick={() => handleLunasKasbon(k)}
-                                      className="bg-neo-teal text-black px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase hover:bg-teal-400"
-                                    >
-                                      Lunas
                                     </button>
                                   </div>
                                 ) : (
                                   <div className="admin-paylater-actions flex gap-1 justify-center flex-wrap">
                                     <button
                                       onClick={() => handleOpenKasbonDetail(k)}
-                                      className="bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
+                                      className="admin-paylater-action-button admin-paylater-detail bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
                                     >
                                       Detail
                                     </button>
-                                    <span className="text-green-700 bg-green-100 px-2 py-1 font-black text-xs border border-green-700 inline-block">
+                                    <span className="admin-paylater-action-button admin-paylater-completed text-green-700 bg-green-100 px-2 py-1 font-black text-xs border border-green-700 inline-block">
                                       Selesai
                                     </span>
                                     <button
                                       onClick={() => handleDeleteKasbon(k.id)}
-                                      className="bg-red-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600"
+                                      className="admin-paylater-action-button admin-paylater-delete bg-red-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-red-600"
                                       title="Hapus"
                                     >
                                       X
