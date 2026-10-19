@@ -1,3 +1,42 @@
+.circuit-wrapper {
+  position: relative;
+  isolation: isolate;
+  background-color: #fff;
+}
+
+.circuit-background {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 19px,
+      rgb(75 85 99 / 8%) 19px,
+      rgb(75 85 99 / 8%) 20px,
+      transparent 20px,
+      transparent 39px,
+      rgb(75 85 99 / 8%) 39px,
+      rgb(75 85 99 / 8%) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 19px,
+      rgb(75 85 99 / 8%) 19px,
+      rgb(75 85 99 / 8%) 20px,
+      transparent 20px,
+      transparent 39px,
+      rgb(75 85 99 / 8%) 39px,
+      rgb(75 85 99 / 8%) 40px
+    ),
+    radial-gradient(circle at 20px 20px, rgb(55 65 81 / 12%) 2px, transparent 2px),
+    radial-gradient(circle at 40px 40px, rgb(55 65 81 / 12%) 2px, transparent 2px);
+  background-size: 40px 40px;
+}
+
 .storefront {
   min-height: 100vh;
   padding-bottom: 3rem;
@@ -1012,7 +1051,7 @@
 }
 
 .login-page {
-  background: var(--color-studio-mist);
+  background: #fff;
 }
 
 .login-card {
@@ -2834,4 +2873,813 @@
 #admin-app .admin-pos-sheet .admin-pos-mobile-item {
   visibility: visible !important;
   opacity: 1 !important;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-gallery-white: #171719;
+  --color-studio-mist: #242426;
+  --color-paper-frost: #1d1d1f;
+  --color-hairline-silver: #3a3a3c;
+  --color-control-gray: #343437;
+  --color-ink: #f5f5f7;
+  --color-slate: #a1a1a6;
+  --color-steel: #8e8e93;
+}
+
+:root[data-theme="dark"] body {
+  background: #171719;
+  color: #f5f5f7;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--color-hairline-silver);
+  border-radius: var(--radius-buttons);
+  background: var(--color-gallery-white);
+  color: var(--color-ink);
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.theme-toggle:hover {
+  background: var(--color-studio-mist);
+}
+
+.storefront-theme-toggle {
+  width: 44px;
+  min-height: 44px;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+#admin-app .admin-theme-toggle {
+  width: 40px;
+  height: 40px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #f5f5f7 !important;
+  color: var(--color-ink) !important;
+}
+
+:root[data-theme="dark"] .circuit-wrapper,
+:root[data-theme="dark"] .login-page {
+  background-color: #171719;
+}
+
+:root[data-theme="dark"] .circuit-background {
+  opacity: 0.45;
+}
+
+:root[data-theme="dark"] .login-card {
+  background: #1d1d1f !important;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .login-card h1,
+:root[data-theme="dark"] .login-card label {
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .login-card input {
+  border-color: #48484a;
+  background: #2a2a2c;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .storefront {
+  background: #171719;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .storefront-header {
+  background: rgb(29 29 31 / 94%);
+}
+
+:root[data-theme="dark"] .storefront-brand,
+:root[data-theme="dark"] .storefront-brand span,
+:root[data-theme="dark"] .storefront-section-title,
+:root[data-theme="dark"] .storefront-results-title,
+:root[data-theme="dark"] .product-card-title,
+:root[data-theme="dark"] .product-card-price {
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .storefront-category {
+  border-color: #48484a;
+  background: #242426;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .storefront-category:hover {
+  background: #303033;
+}
+
+:root[data-theme="dark"] .storefront-category.is-active {
+  border-color: #0a84ff;
+  background: #0a84ff;
+  color: #fff;
+}
+
+:root[data-theme="dark"] .storefront-search-input,
+:root[data-theme="dark"] .storefront-cart-trigger,
+:root[data-theme="dark"] .theme-toggle {
+  border-color: #48484a;
+  background-color: #242426;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .storefront-search-input::placeholder {
+  color: #a1a1a6;
+}
+
+:root[data-theme="dark"] .product-card,
+:root[data-theme="dark"] .cart-sidebar,
+:root[data-theme="dark"] .cart-sidebar-header,
+:root[data-theme="dark"] .storefront-product-sheet,
+:root[data-theme="dark"] .storefront-sheet-product {
+  border-color: #3a3a3c;
+  background: #1d1d1f;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .product-card-media,
+:root[data-theme="dark"] .product-card-category,
+:root[data-theme="dark"] .cart-customer-fields,
+:root[data-theme="dark"] .cart-empty-icon,
+:root[data-theme="dark"] .storefront-sheet-image,
+:root[data-theme="dark"] .storefront-sheet-quantity {
+  background: #2a2a2c;
+}
+
+:root[data-theme="dark"] .product-card-media img {
+  mix-blend-mode: normal;
+}
+
+:root[data-theme="dark"] .cart-sidebar p,
+:root[data-theme="dark"] .cart-sidebar label,
+:root[data-theme="dark"] .cart-sidebar span,
+:root[data-theme="dark"] .storefront-sheet-product-info,
+:root[data-theme="dark"] .storefront-sheet-heading,
+:root[data-theme="dark"] .storefront-sheet-quantity-row {
+  color: #d1d1d6;
+}
+
+:root[data-theme="dark"] .cart-sidebar input,
+:root[data-theme="dark"] .cart-sidebar textarea,
+:root[data-theme="dark"] .storefront-sheet-quantity button,
+:root[data-theme="dark"] .storefront-empty {
+  border-color: #48484a;
+  background: #242426;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .cart-total-row strong,
+:root[data-theme="dark"] .cart-sidebar-header h2,
+:root[data-theme="dark"] .cart-empty-state h3,
+:root[data-theme="dark"] .storefront-sheet-heading h2,
+:root[data-theme="dark"] .storefront-sheet-product-info h3,
+:root[data-theme="dark"] .storefront-sheet-quantity > span {
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .admin-shell,
+:root[data-theme="dark"] .admin-shell main {
+  background: #111113 !important;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-sidebar,
+:root[data-theme="dark"] .admin-shell .admin-topbar {
+  background: #1d1d1f !important;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-content [class*="bg-white"],
+:root[data-theme="dark"] .admin-shell .admin-content [class*="bg-gray-50"],
+:root[data-theme="dark"] .admin-shell .admin-content [class*="bg-gray-100"],
+:root[data-theme="dark"] .admin-shell .admin-content [class*="bg-yellow-"],
+:root[data-theme="dark"] .admin-shell .admin-content [class*="bg-[#ffde59]"] {
+  background-color: #1d1d1f !important;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-content h1,
+:root[data-theme="dark"] .admin-shell .admin-content h2,
+:root[data-theme="dark"] .admin-shell .admin-content h3,
+:root[data-theme="dark"] .admin-shell .admin-content h4,
+:root[data-theme="dark"] .admin-shell .admin-content p,
+:root[data-theme="dark"] .admin-shell .admin-content label,
+:root[data-theme="dark"] .admin-shell .admin-content td,
+:root[data-theme="dark"] .admin-shell .admin-content th,
+:root[data-theme="dark"] .admin-shell .admin-topbar h2,
+:root[data-theme="dark"] .admin-shell .admin-sidebar h1 {
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-content input,
+:root[data-theme="dark"] .admin-shell .admin-content select,
+:root[data-theme="dark"] .admin-shell .admin-content textarea,
+:root[data-theme="dark"] .admin-shell .admin-pos-search {
+  background-color: #2a2a2c !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-content table,
+:root[data-theme="dark"] .admin-shell .admin-content table tbody tr,
+:root[data-theme="dark"] .admin-shell .admin-content table tbody tr:nth-child(even) {
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-content table thead tr,
+:root[data-theme="dark"] .admin-shell .admin-content table thead th {
+  background: #2a2a2c !important;
+  color: #d1d1d6 !important;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-nav-item {
+  color: #c7c7cc !important;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-nav-item.admin-nav-active,
+:root[data-theme="dark"] #admin-app .admin-nav-item.admin-nav-active {
+  background: #0a84ff !important;
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] .admin-shell .admin-nav-item.admin-nav-active svg {
+  color: #fff !important;
+  stroke: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-stat-card {
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-stat-card h3,
+:root[data-theme="dark"] #admin-app .admin-stat-card p {
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-topbar-actions .theme-toggle,
+:root[data-theme="dark"] #admin-app .admin-notification-trigger {
+  background: #2a2a2c !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar,
+:root[data-theme="dark"] #admin-app .admin-topbar {
+  border-color: #343437 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar-brand,
+:root[data-theme="dark"] #admin-app .admin-sidebar > div:last-child {
+  border-color: #343437 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-brand-mark {
+  background: #25364a !important;
+  color: #9ccaff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-nav-item:not(.admin-nav-active) {
+  color: #d1d1d6 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-nav-item:not(.admin-nav-active) svg {
+  color: #a1a1a6 !important;
+  stroke: #a1a1a6 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-nav-item:not(.admin-nav-active):hover {
+  background: #2a2a2c !important;
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-nav-item.admin-nav-active,
+:root[data-theme="dark"] #admin-app .admin-nav-item.admin-nav-active:hover {
+  background: #0a84ff !important;
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-nav-item.admin-nav-active svg {
+  color: #fff !important;
+  stroke: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content,
+:root[data-theme="dark"] #admin-app .admin-content > *,
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-white"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-50"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-100"] {
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content table tbody tr,
+:root[data-theme="dark"] #admin-app .admin-content table tbody tr:nth-child(even),
+:root[data-theme="dark"] #admin-app .admin-content table tbody tr:hover {
+  background: #1d1d1f !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content table tbody tr:hover {
+  background: #29292c !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content table td,
+:root[data-theme="dark"] #admin-app .admin-content table td *,
+:root[data-theme="dark"] #admin-app .admin-content table th {
+  color: #e5e5ea !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content table a,
+:root[data-theme="dark"] #admin-app .admin-content table button:not([class*="bg-red-"]) {
+  color: #9ccaff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content table button[class*="bg-red-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-red-"] {
+  background: #54272a !important;
+  color: #ffd6d2 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-green-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-neo-teal"] {
+  background: #1f4934 !important;
+  color: #c6f6d5 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-yellow-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-[#ffde59]"] {
+  background: #51421d !important;
+  color: #ffe9a8 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-blue-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-indigo-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-purple-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-neo-purple"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-neo-orange"] {
+  background: #173b63 !important;
+  color: #d5eaff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-gray-"] {
+  background: #343437 !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-red-"]:not(button),
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-green-"]:not(button),
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-yellow-"]:not(button),
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-indigo-"]:not(button),
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-purple-"]:not(button),
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-blue-"]:not(button) {
+  border-color: #48484a !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-red-"] {
+  color: #ff9b93 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-green-"] {
+  color: #8de0a8 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-yellow-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-amber-"] {
+  color: #ffe08a !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-blue-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-indigo-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-purple-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-neo-orange"] {
+  color: #9ccaff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content input,
+:root[data-theme="dark"] #admin-app .admin-content select,
+:root[data-theme="dark"] #admin-app .admin-content textarea {
+  border-color: #48484a !important;
+  background-color: #2a2a2c !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content input::placeholder,
+:root[data-theme="dark"] #admin-app .admin-content textarea::placeholder {
+  color: #a1a1a6 !important;
+  opacity: 1;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content select option {
+  background: #242426;
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] #admin-app .admin-stat-card {
+  border-color: #343437 !important;
+  border-left-color: #0a84ff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-pos-product {
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-pos-product h4,
+:root[data-theme="dark"] #admin-app .admin-pos-product-price,
+:root[data-theme="dark"] #admin-app .admin-pos-mobile-item-price {
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-pos-product > div:first-child > div:first-child,
+:root[data-theme="dark"] #admin-app .admin-pos-mobile-item {
+  background: #2a2a2c !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-pos-cart,
+:root[data-theme="dark"] #admin-app .admin-pos-sheet {
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-modal-panel,
+:root[data-theme="dark"] #admin-app .admin-paylater-modal-panel,
+:root[data-theme="dark"] #admin-app .admin-notification-panel,
+:root[data-theme="dark"] #admin-app .admin-order-notification {
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-modal-panel h2,
+:root[data-theme="dark"] #admin-app .admin-modal-panel h3,
+:root[data-theme="dark"] #admin-app .admin-modal-panel p,
+:root[data-theme="dark"] #admin-app .admin-paylater-modal-panel h2,
+:root[data-theme="dark"] #admin-app .admin-paylater-modal-panel p,
+:root[data-theme="dark"] #admin-app .admin-notification-panel p,
+:root[data-theme="dark"] #admin-app .admin-order-notification p,
+:root[data-theme="dark"] #admin-app .admin-order-notification h3 {
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-modal-panel > div:first-child,
+:root[data-theme="dark"] #admin-app .admin-paylater-modal-panel > div:first-child,
+:root[data-theme="dark"] #admin-app .admin-notification-panel > div:first-child {
+  background: #2a2a2c !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-modal-panel button,
+:root[data-theme="dark"] #admin-app .admin-paylater-modal-panel button,
+:root[data-theme="dark"] #admin-app .admin-notification-panel button {
+  color: #f5f5f7;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .recharts-cartesian-axis-tick-value,
+:root[data-theme="dark"] #admin-app .admin-content .recharts-legend-item-text,
+:root[data-theme="dark"] #admin-app .admin-content .recharts-pie-label-text {
+  fill: #d1d1d6 !important;
+  color: #d1d1d6 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .recharts-cartesian-grid line {
+  stroke: #3a3a3c !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .recharts-tooltip-wrapper > div {
+  border-color: #48484a !important;
+  background: #242426 !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content table thead tr,
+:root[data-theme="dark"] #admin-app .admin-content table thead tr.bg-black,
+:root[data-theme="dark"] #admin-app .admin-content table thead th,
+:root[data-theme="dark"] #admin-app .admin-content table thead th * {
+  background: #2a2a2c !important;
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item,
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item span,
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item svg {
+  color: #d1d1d6 !important;
+  -webkit-text-fill-color: #d1d1d6 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item svg {
+  stroke: #d1d1d6 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item.admin-nav-active,
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item.admin-nav-active span,
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item.admin-nav-active svg {
+  background-color: #0a84ff !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item.admin-nav-active svg {
+  stroke: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar > div:last-child button {
+  background: #2a2a2c !important;
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar > div:last-child button[class*="bg-red-"] {
+  background: #54272a !important;
+  color: #ffd6d2 !important;
+  -webkit-text-fill-color: #ffd6d2 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-red-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-green-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-yellow-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-amber-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-blue-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-indigo-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-purple-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-neo-teal"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-neo-purple"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-neo-orange"] {
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-red-"] {
+  background-color: #54272a !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-green-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-neo-teal"] {
+  background-color: #1f4934 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-yellow-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-amber-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-[#ffde59]"] {
+  background-color: #51421d !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-blue-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-indigo-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-purple-"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-neo-purple"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-neo-orange"] {
+  background-color: #173b63 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-red-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-green-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-yellow-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-amber-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-blue-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-indigo-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-purple-"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-neo-teal"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-neo-purple"],
+:root[data-theme="dark"] #admin-app .admin-content button[class*="bg-neo-orange"] {
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-catalog {
+  background: #111113 !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-controls,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart > div,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-sheet,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-sheet > div {
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart h3,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart p,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart span,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-sheet h3,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-sheet p,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-sheet span {
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart .text-gray-400,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart .text-gray-600 {
+  color: #a1a1a6 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-200"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-300"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-400"] {
+  background: #343437 !important;
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-gray-400"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-gray-500"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-gray-600"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-gray-700"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="text-gray-800"] {
+  color: #c7c7cc !important;
+  -webkit-text-fill-color: #c7c7cc !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-200"] [class*="text-white"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-300"] [class*="text-white"],
+:root[data-theme="dark"] #admin-app .admin-content [class*="bg-gray-400"] [class*="text-white"] {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-id,
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-id * {
+  background: #343437 !important;
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card {
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card:hover,
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card:focus-within {
+  background: #29292c !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-details {
+  background: #242426 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item:not(.admin-nav-active) {
+  background: #242426 !important;
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item:not(.admin-nav-active) svg {
+  color: #d1d1d6 !important;
+  stroke: #d1d1d6 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar .admin-nav-item:not(.admin-nav-active):hover {
+  background: #343437 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-sidebar > div:last-child button:not([class*="bg-red-"]) {
+  background: #343437 !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-layout,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-catalog,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-catalog > div,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-controls {
+  background: #111113 !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-controls {
+  border-color: #343437 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-category-row button {
+  background: #2a2a2c !important;
+  color: #e5e5ea !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-category-row button[aria-pressed="true"] {
+  background: #173b63 !important;
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-list-heading,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-list-heading h3,
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-list-heading span {
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-empty-cart {
+  color: #c7c7cc !important;
+  -webkit-text-fill-color: #c7c7cc !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart > div {
+  border-color: #343437 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-pos-cart > div > div > div {
+  background: #2a2a2c !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-id,
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-id * {
+  background: #343437 !important;
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card,
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card > div {
+  background-color: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card:hover,
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card:hover > div {
+  background-color: #29292c !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card .admin-order-details,
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card .admin-order-details > div {
+  background: #242426 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card .admin-order-details table,
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card .admin-order-details tbody tr {
+  background: #242426 !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-content .admin-order-card .admin-order-details table thead th {
+  background: #343437 !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-panel {
+  border: 1px solid #48484a !important;
+  background: #1d1d1f !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-header {
+  border-color: #3a3a3c !important;
+  background: #2a2a2c !important;
+  color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-header h3,
+:root[data-theme="dark"] #admin-app .admin-notification-header button,
+:root[data-theme="dark"] #admin-app .admin-notification-header svg {
+  color: #f5f5f7 !important;
+  stroke: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-list {
+  background: #171719 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-item,
+:root[data-theme="dark"] #admin-app .admin-notification-empty {
+  border: 1px solid #3a3a3c !important;
+  background: #242426 !important;
+  color: #f5f5f7 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-item:hover {
+  background: #303033 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-item p,
+:root[data-theme="dark"] #admin-app .admin-notification-empty {
+  color: #f5f5f7 !important;
+  -webkit-text-fill-color: #f5f5f7 !important;
+}
+
+:root[data-theme="dark"] #admin-app .admin-notification-item p.text-gray-600,
+:root[data-theme="dark"] #admin-app .admin-notification-item p.text-gray-500 {
+  color: #c7c7cc !important;
+  -webkit-text-fill-color: #c7c7cc !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .theme-toggle svg {
+    transition: transform 180ms ease;
+  }
+
+  .theme-toggle:active svg {
+    transform: rotate(-18deg);
+  }
 }

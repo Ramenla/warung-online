@@ -10,14 +10,17 @@ import {
   CreditCard,
   LayoutDashboard,
   Menu,
+  Moon,
   Package,
   PanelsTopLeft,
   Search,
   ShoppingCart,
   Store,
+  Sun,
   Wallet,
   X,
 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 import {
   LineChart,
   Line,
@@ -81,6 +84,7 @@ function AlertModal({ open, message, onClose }) {
 }
 
 export default function Admin() {
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState("dashboard");
   const [loading, setLoading] = useState(true);
@@ -1392,20 +1396,31 @@ export default function Admin() {
               {navItems.find((n) => n.id === activeView)?.label}
             </h2>
           </div>
-          <button
-            onClick={() => {
-              setIsFabOpen(!isFabOpen);
-              if (!isFabOpen) setUnreadCount(0);
-            }}
-            className="admin-notification-trigger"
-            aria-label="Buka notifikasi"
-            aria-expanded={isFabOpen}
-          >
-            <Bell size={19} aria-hidden="true" />
-            {unreadCount > 0 && (
-              <span className="admin-notification-badge">{unreadCount}</span>
-            )}
-          </button>
+          <div className="admin-topbar-actions">
+            <button
+              onClick={() => {
+                setIsFabOpen(!isFabOpen);
+                if (!isFabOpen) setUnreadCount(0);
+              }}
+              className="admin-notification-trigger"
+              aria-label="Buka notifikasi"
+              aria-expanded={isFabOpen}
+            >
+              <Bell size={19} aria-hidden="true" />
+              {unreadCount > 0 && (
+                <span className="admin-notification-badge">{unreadCount}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="theme-toggle admin-theme-toggle"
+              aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
+              aria-pressed={theme === "dark"}
+            >
+              {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+            </button>
+          </div>
         </div>
 
         {/* Notifikasi Pesanan Baru */}
@@ -1988,7 +2003,7 @@ export default function Admin() {
                 <div className="flex-1 overflow-y-auto p-4 mb-4 border-b-4 border-dashed border-gray-300">
                   <div className="flex flex-col gap-3">
                     {posCart.length === 0 ? (
-                      <div className="m-auto text-gray-400 font-bold text-center py-10">
+                      <div className="admin-pos-empty-cart m-auto text-gray-400 font-bold text-center py-10">
                         Keranjang masih kosong
                       </div>
                     ) : (
@@ -2551,12 +2566,12 @@ export default function Admin() {
                       return (
                         <div
                           key={order.id}
-                          className="border-2 border-black p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                          className="admin-order-card border-2 border-black p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
                         >
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono font-black text-sm bg-gray-200 px-2 border border-black">
+                                <span className="admin-order-id font-mono font-black text-sm bg-gray-200 px-2 border border-black">
                                   #{shortId}
                                 </span>
                                 <span
@@ -2608,7 +2623,7 @@ export default function Admin() {
                           </div>
                           {expandedOrder === order.id &&
                             orderDetails[order.id] && (
-                              <div className="mt-3 border-t-2 border-black pt-2">
+                              <div className="admin-order-details mt-3 border-t-2 border-black pt-2">
                                 <div className="w-full overflow-x-auto border-4 border-black bg-white">
                                   <table className="w-full text-xs whitespace-nowrap">
                                     <thead>
@@ -3382,7 +3397,7 @@ export default function Admin() {
       {isFabOpen && (
         <div className="admin-notification-panel fixed top-16 right-4 z-[100] w-80 bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-h-[70vh] flex flex-col animate-in slide-in-from-bottom-5 duration-200">
           {/* Header Panel */}
-          <div className="flex justify-between items-center p-4 border-b-4 border-black bg-[#ffde59]">
+          <div className="admin-notification-header flex justify-between items-center p-4 border-b-4 border-black bg-[#ffde59]">
             <h3 className="font-black uppercase text-lg text-left">Notifikasi Baru</h3>
             <button
               onClick={() => setIsFabOpen(false)}
@@ -3393,12 +3408,12 @@ export default function Admin() {
           </div>
 
           {/* Content/List Notifikasi (Area Scrollable) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+          <div className="admin-notification-list flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
             {notifications.length > 0 ? (
               notifications.map((notif, index) => (
                 <div
                   key={notif.id || index}
-                  className="p-3 border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffde59] transition-colors cursor-pointer"
+                  className="admin-notification-item p-3 border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffde59] transition-colors cursor-pointer"
                 >
                   <p className="font-bold">Pesanan Masuk!</p>
                   <p className="text-sm text-gray-800 font-medium">
@@ -3416,7 +3431,7 @@ export default function Admin() {
                 </div>
               ))
             ) : (
-              <p className="text-center py-4 font-medium border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <p className="admin-notification-empty text-center py-4 font-medium border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                 Belum ada notifikasi.
               </p>
             )}

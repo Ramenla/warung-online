@@ -4,7 +4,8 @@ import CartSidebar from "../components/CartSidebar";
 import { supabase } from "../supabaseClient";
 import { CartContext } from "../context/CartContext";
 import { handleSupabaseError } from "../utils/errorHandler";
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Moon, Plus, Sun, X } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Storefront() {
   const [products, setProducts] = useState([]);
@@ -20,6 +21,7 @@ export default function Storefront() {
   const [sections, setSections] = useState([]);
 
   const { totalItems, addToCart } = useContext(CartContext);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -145,6 +147,15 @@ export default function Storefront() {
                 </svg>
                 <span className="storefront-cart-label">Keranjang</span>
                 <span className="storefront-cart-count">{totalItems}</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="theme-toggle storefront-theme-toggle"
+                aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
+                aria-pressed={theme === "dark"}
+              >
+                {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
               </button>
             </div>
           </header>

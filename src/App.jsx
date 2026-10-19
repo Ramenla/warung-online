@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import Storefront from './pages/Storefront';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import { ThemeProvider } from './context/ThemeContext';
 
 const ProtectedRoute = () => {
   const [session, setSession] = useState(null);
@@ -35,14 +36,16 @@ const ProtectedRoute = () => {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Storefront />} />
-        <Route path="/login" element={<Login />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/admin" element={<Admin />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Storefront />} />
+          <Route path="/login" element={<Login />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<Admin />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
