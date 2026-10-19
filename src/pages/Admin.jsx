@@ -12,6 +12,7 @@ import {
   Menu,
   Package,
   PanelsTopLeft,
+  Search,
   ShoppingCart,
   Store,
   Wallet,
@@ -1260,7 +1261,7 @@ export default function Admin() {
   };
 
   return (
-    <div className="admin-shell flex h-screen w-full overflow-hidden bg-neo-bg font-sans text-black selection:bg-neo-purple selection:text-white">
+    <div id="admin-app" className="admin-shell flex h-screen w-full overflow-hidden bg-neo-bg font-sans text-black selection:bg-neo-purple selection:text-white">
       {/* Custom Modals */}
       <ConfirmModal
         open={confirmState.open}
@@ -1378,12 +1379,12 @@ export default function Admin() {
       {/* ====== MAIN CONTENT ====== */}
       <main className="flex-1 h-full flex flex-col overflow-hidden">
         {/* Mobile Topbar */}
-        <div className="admin-topbar sticky top-0 z-30 flex items-center justify-between bg-white border-b-4 border-black p-3 md:p-4">
+        <div className={`admin-topbar sticky top-0 z-30 flex items-center justify-between bg-white border-b-4 border-black p-3 md:p-4${activeView === "kasir" ? " admin-topbar-pos" : ""}`}>
           {/* Bagian Kiri: Tombol Menu & Judul */}
           <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="admin-menu-toggle md:hidden font-black text-2xl border-2 border-black bg-gray-100 w-10 h-10 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+              className={`admin-menu-toggle md:hidden font-black text-2xl border-2 border-black bg-gray-100 w-10 h-10 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5${isSidebarOpen ? " admin-menu-open" : ""}`}
             >
               <Menu size={20} aria-hidden="true" />
             </button>
@@ -1392,10 +1393,18 @@ export default function Admin() {
             </h2>
           </div>
           <button
-            onClick={handleLogout}
-            className="bg-red-500 text-white px-3 py-1.5 font-bold border-2 border-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            onClick={() => {
+              setIsFabOpen(!isFabOpen);
+              if (!isFabOpen) setUnreadCount(0);
+            }}
+            className="admin-notification-trigger"
+            aria-label="Buka notifikasi"
+            aria-expanded={isFabOpen}
           >
-            Keluar
+            <Bell size={19} aria-hidden="true" />
+            {unreadCount > 0 && (
+              <span className="admin-notification-badge">{unreadCount}</span>
+            )}
           </button>
         </div>
 
@@ -1428,7 +1437,7 @@ export default function Admin() {
                 <select
                   value={filterMonth}
                   onChange={(e) => setFilterMonth(e.target.value)}
-                  className="px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm"
+                  className="admin-dashboard-period-filter px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm"
                 >
                   <option value="semua">Semua Bulan</option>
                   {Array.from({ length: 12 }, (_, i) => (
@@ -1442,7 +1451,7 @@ export default function Admin() {
                 <select
                   value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
-                  className="px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm"
+                  className="admin-dashboard-period-filter px-3 py-2 border-4 border-black font-black focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white cursor-pointer uppercase text-sm"
                 >
                   <option value="semua">Semua Tahun</option>
                   {[2024, 2025, 2026, 2027].map((y) => (
@@ -1878,35 +1887,49 @@ export default function Admin() {
 
           {/* =============== KASIR (POS) =============== */}
           {!loading && activeView === "kasir" && (
-            <div className="admin-pos-layout flex flex-col lg:grid lg:grid-cols-3 gap-0 lg:gap-6 h-full overflow-hidden pb-4">
+            <div className="admin-pos-layout flex flex-col lg:grid gap-0 lg:gap-6 h-full overflow-hidden pb-4">
               {/* KIRI: Etalase */}
-              <div className="admin-pos-catalog col-span-2 flex-1 h-full overflow-y-auto p-2 md:p-4 pb-24 lg:pb-4 flex flex-col border-r-0 lg:border-r-4 border-black">
+              <div className="admin-pos-catalog flex-1 h-full overflow-y-auto p-2 md:p-4 pb-24 lg:pb-4 flex flex-col border-r-0 lg:border-r-4 border-black">
                 <div className="admin-pos-controls p-4 border-b-4 border-black shrink-0">
-                  <input
-                    type="text"
-                    placeholder="Scan atau cari nama barang..."
-                    value={posSearch}
-                    onChange={(e) => setPosSearch(e.target.value)}
-                    className="w-full p-4 text-xl border-4 border-black font-black focus:outline-none shadow-[4px_4px_0_0_black] bg-white mb-4"
-                    autoFocus
-                  />
+                  <div className="admin-pos-toolbar">
+                    <label className="admin-pos-search">
+                      <Search size={17} aria-hidden="true" />
+                      <input
+                        type="text"
+                        placeholder="Cari produk..."
+                        aria-label="Cari produk"
+                        value={posSearch}
+                        onChange={(e) => setPosSearch(e.target.value)}
+                        className="admin-pos-search-input"
+                        autoFocus
+                      />
+                    </label>
+                  </div>
 
                   {/* Kategori Filter */}
-                  <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
-                    {posCategories.map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setPosSelectedCategory(cat)}
-                        className={`whitespace-nowrap px-3 py-1 font-bold border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-y-1 text-sm md:text-base
-                          ${posSelectedCategory === cat ? "bg-neo-purple text-white" : "bg-white text-black hover:bg-gray-100"}`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+                  <div className="admin-pos-category-row">
+                    <span className="admin-pos-category-label">Kategori</span>
+                    <div className="flex overflow-x-auto gap-2 scrollbar-hide">
+                      {posCategories.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setPosSelectedCategory(cat)}
+                          aria-pressed={posSelectedCategory === cat}
+                          className={`whitespace-nowrap px-3 py-1 font-bold border-2 border-black rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-y-1 text-sm md:text-base
+                            ${posSelectedCategory === cat ? "bg-neo-purple text-white" : "bg-white text-black hover:bg-gray-100"}`}
+                        >
+                          {cat === "Semua" ? "Semua Kategori" : cat}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
+                  <div className="admin-pos-list-heading">
+                    <h3>Menu Produk</h3>
+                    <span>{posFilteredProducts.length} produk</span>
+                  </div>
                   <div className="admin-pos-products grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 pb-6">
                     {posFilteredProducts.length === 0 && (
                       <div className="col-span-full py-20 text-center font-bold text-gray-400">
@@ -1940,7 +1963,7 @@ export default function Admin() {
                             </h4>
                           </div>
                           <div className="mt-2">
-                            <p className="font-black text-sm md:text-base text-neo-teal">
+                            <p className="admin-pos-product-price font-black text-sm md:text-base text-neo-teal">
                               {formatRupiah(p.harga)}
                             </p>
                             <p
@@ -1957,9 +1980,9 @@ export default function Admin() {
               </div>
 
               {/* KANAN: Struk/Cart (HIDDEN ON MOBILE, ONLY ON DESKTOP) */}
-              <div className="admin-pos-cart hidden lg:flex flex-col col-span-1 h-full overflow-hidden border-4 border-black bg-white p-4 shrink-0 shadow-[6px_6px_0_0_black]">
+              <div className="admin-pos-cart hidden lg:flex flex-col h-full overflow-hidden border-4 border-black bg-white p-4 shrink-0 shadow-[6px_6px_0_0_black]">
                 <h3 className="font-black text-xl mb-4 border-b-4 border-black pb-2 uppercase shrink-0 text-left">
-                  Keranjang Kasir
+                  Detail Pesanan
                 </h3>
 
                 <div className="flex-1 overflow-y-auto p-4 mb-4 border-b-4 border-dashed border-gray-300">
@@ -2152,7 +2175,7 @@ export default function Admin() {
                         {posCart.map((item) => (
                           <div
                             key={item.id}
-                            className="flex justify-between items-start gap-2 text-sm bg-white border-2 border-black p-3 shadow-[2px_2px_0_0_black]"
+                            className="admin-pos-mobile-item flex justify-between items-start gap-2 text-sm bg-white border-2 border-black p-3 shadow-[2px_2px_0_0_black]"
                           >
                             <div className="flex-1">
                               <p className="font-bold leading-tight text-base mb-1">
@@ -2163,7 +2186,7 @@ export default function Admin() {
                               </p>
                             </div>
                             <div className="flex flex-col items-end justify-between h-full">
-                              <p className="font-black text-neo-teal text-base mb-2">
+                              <p className="admin-pos-mobile-item-price font-black text-neo-teal text-base mb-2">
                                 {formatRupiah(item.harga * item.qty)}
                               </p>
                               <div className="flex items-center gap-1">
@@ -2750,12 +2773,6 @@ export default function Admin() {
           {/* =============== BUKU KASBON =============== */}
           {!loading && activeView === "kasbon" && (
             <>
-              <div className="flex justify-between flex-wrap gap-2 mb-4 items-center">
-                <h2 className="font-black text-2xl uppercase hidden md:block text-left">
-                  Paylater
-                </h2>
-              </div>
-
               <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
                 {kasbon.length === 0 ? (
                   <p className="text-center text-gray-500 font-bold py-8">
@@ -2820,7 +2837,7 @@ export default function Admin() {
                               </td>
                               <td className="p-3 text-center whitespace-nowrap">
                                 {k.status === "Belum Lunas" ? (
-                                  <div className="flex gap-1 justify-center flex-wrap">
+                                  <div className="admin-paylater-actions flex gap-1 justify-center flex-wrap">
                                     <button
                                       onClick={() => handleOpenKasbonDetail(k)}
                                       className="bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
@@ -2842,7 +2859,7 @@ export default function Admin() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <div className="flex gap-1 justify-center flex-wrap">
+                                  <div className="admin-paylater-actions flex gap-1 justify-center flex-wrap">
                                     <button
                                       onClick={() => handleOpenKasbonDetail(k)}
                                       className="bg-indigo-500 text-white px-2 py-1 md:px-3 md:py-2 border-2 border-black text-xs md:text-sm font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-indigo-600"
@@ -2877,8 +2894,8 @@ export default function Admin() {
 
       {/* ====== MODAL DETAIL PAYLATER ====== */}
       {selectedCustomer && (
-        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-3 backdrop-blur-sm">
-          <div className="bg-white w-[95%] max-w-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
+        <div className="admin-paylater-modal fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-3 backdrop-blur-sm">
+          <div className="admin-paylater-modal-panel bg-white w-[95%] max-w-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b-4 border-black bg-[#ffde59] shrink-0">
               <div>
@@ -3363,7 +3380,7 @@ export default function Admin() {
 
       {/* --- PANEL NOTIFIKASI (Muncul di atas tombol) --- */}
       {isFabOpen && (
-        <div className="fixed top-16 right-4 md:top-auto md:bottom-24 md:right-6 z-[100] w-80 bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-h-[70vh] flex flex-col animate-in slide-in-from-bottom-5 duration-200">
+        <div className="admin-notification-panel fixed top-16 right-4 z-[100] w-80 bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-h-[70vh] flex flex-col animate-in slide-in-from-bottom-5 duration-200">
           {/* Header Panel */}
           <div className="flex justify-between items-center p-4 border-b-4 border-black bg-[#ffde59]">
             <h3 className="font-black uppercase text-lg text-left">Notifikasi Baru</h3>
@@ -3407,28 +3424,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* --- TOMBOL FLOATING (FAB) --- */}
-      <button
-        onClick={() => {
-          setIsFabOpen(!isFabOpen);
-          if (!isFabOpen) setUnreadCount(0); // Reset badge saat dibuka
-        }}
-        className={`admin-notification-trigger fixed top-3 right-4 md:top-auto md:bottom-6 md:right-6 z-[100] p-4 bg-white border-4 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:bg-[#ffde59] ${isFabOpen ? "bg-[#ffde59] translate-x-[2px] translate-y-[2px] shadow-none" : ""}`}
-        aria-label="Buka Notifikasi"
-      >
-        <div className="relative">
-          <Bell size={28} strokeWidth={2.5} />
-          {/* Badge Merah Berdenyut (Indikator ada notif baru) */}
-          {unreadCount > 0 && (
-            <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-6 w-6 bg-red-600 border-2 border-black items-center justify-center text-white text-xs font-bold">
-                {unreadCount}
-              </span>
-            </span>
-          )}
-        </div>
-      </button>
     </div>
   );
 }
